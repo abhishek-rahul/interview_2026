@@ -384,4 +384,181 @@ class Solution {
     }
 }
 
-// 
+// Matrix BFS Number of Islands 
+// 40 minutes 
+
+class Pair {
+    int row;
+    int col;
+    Pair(int row,int col) {
+        this.row = row;
+        this.col = col;
+    }
+}
+
+class Solution {
+
+    int[] dirRow = {0,0,1,-1};
+    int[] dirCol = {1,-1,0,0};
+
+    private void bfs(char[][] grid,int rowLen, int colLen,int row,int col) {
+        int newRow,newCol;
+        Queue<Pair> queue = new LinkedList<>();
+        Pair p;
+        queue.offer(new Pair(row,col));
+        while(!queue.isEmpty()) {
+            p = queue.poll();
+            grid[p.row][p.col] = '0';
+            for(int i=0;i<4;i++) {
+                newRow = p.row+dirRow[i];
+                newCol = p.col+dirCol[i];
+                if ( newRow>=0 && newRow<rowLen && newCol>=0 && newCol<colLen && grid[newRow][newCol] == '1'){
+                    grid[newRow][newCol] = '0';
+                    queue.offer(new Pair(newRow,newCol));
+                }
+            }
+        }
+    }
+
+    public int numIslands(char[][] grid) {
+        int rowLen = grid.length;
+        int colLen = grid[0].length;
+        //System.out.println(rowLen);
+        //System.out.println(colLen);
+        int cnt = 0;
+        for (int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++) {
+                if(grid[i][j]=='1') {
+                    bfs(grid,rowLen,colLen,i,j);
+                    cnt++;
+                }
+            }
+        }
+        return cnt;
+    }
+}
+
+// Matrix DFS Number of Islands
+
+class Solution {
+
+    int[] dirRow = {0,0,1,-1};
+    int[] dirCol = {1,-1,0,0};
+
+    private void dfs (char[][] grid,int rowLen,int colLen , int row, int col ) {
+        if ( row<0 || row>=rowLen || col<0 || col>=colLen) {
+            return ;
+        }
+        if ( row>=0 && row<rowLen && col>=0 && col<colLen && grid[row][col]!='1') {
+            return ;
+        }
+        grid[row][col] = '0';
+        int newRow,newCol;
+        for(int i=0;i<4;i++) {
+            newRow = row + dirRow[i];
+            newCol = col + dirCol[i];
+            if ( newRow>=0 && newRow<rowLen && newCol>=0 && newCol<colLen && grid[newRow][newCol]=='1') {
+                dfs(grid,rowLen,colLen,newRow,newCol);
+            }
+        }   
+
+    }
+
+    public int numIslands(char[][] grid) {
+        int rowLen = grid.length;
+        int colLen = grid[0].length;
+        int cnt = 0;
+        for (int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++) {
+                if(grid[i][j]=='1') {
+                    dfs(grid,rowLen,colLen,i,j);
+                    cnt++;
+                }
+            }
+        }
+        return cnt;
+    }
+}
+
+// Cycle in Undirected Graph
+
+    private boolean detectCycle(int source,int parent,List<List<Integer>> graph,int[] visited) {
+        visited[source] = 1;
+        int dest ;
+        
+        for(int i=0;i<graph.get(source).size();i++){
+            dest = graph.get(source).get(i);
+            if(visited[dest]==0)
+            {
+                if(detectCycle(dest,source,graph,visited))
+                    return true;
+            }
+            else if(visited[dest]==1 && dest!=parent)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public boolean isCycle(int V, int[][] edges) {
+        // Code here
+        List<List<Integer>> graph = new ArrayList<List<Integer>>();
+        
+        populateGraph(V,graph,edges);
+        
+        boolean isCyclePresent = false;
+        int[] visited = new int[V];
+        Arrays.fill(visited,0);
+        for(int i=0;i<V;i++) {
+            if(visited[i]==0) {
+                isCyclePresent = detectCycle(i,-1,graph,visited);
+                if(isCyclePresent)
+                    return isCyclePresent;
+            }
+        }
+        return isCyclePresent;
+    }
+
+
+// Cycle in a directed Graph 
+class Solution {
+    // Function to detect cycle in a directed graph.
+    
+    private boolean isCycle(int source,int [] visited,ArrayList<ArrayList<Integer>> adj)
+    {
+        visited[source] = 1;
+        int dest;
+        for(int i=0;i<adj.get(source).size();i++)
+        {
+            dest = adj.get(source).get(i);
+            if(visited[dest]==0)
+            {
+                if(isCycle(dest,visited,adj))
+                    return true;
+            }
+            else if(visited[dest]==1)
+            {
+                return true;
+            }
+        }
+        visited[source] = 2;
+        return false;
+    }   
+    public boolean isCyclic(int V, ArrayList<ArrayList<Integer>> adj) {
+         int visited[] = new int[V+5];
+        Arrays.fill(visited,0);
+        
+        for(int i=0;i<V;i++)
+        {
+            if(visited[i]==0)
+            {
+                if(isCycle(i,visited,adj))
+                    return true;
+            }
+        }
+        return false; 
+    }
+}
+
+// Course Schedule 1 
