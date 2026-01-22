@@ -839,3 +839,144 @@ class Solution {
 
     }
 }
+
+// Rotten Oranges :
+class Pair {
+    int row;
+    int col;
+    Pair(int row, int col) {
+        this.row = row;
+        this.col = col;
+    }
+}
+class Solution {
+    int[] dirRow = {-1,1,0,0};
+    int[] dirCol = {0,0,-1,1};
+
+    private void bfsOrangesRotten(int[][] grid,int[][] minutesTaken,int rowLen,int colLen) {
+        Queue<Pair> queue = new LinkedList<>();
+        for(int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++) {
+                if ( grid[i][j]==2) {
+                    queue.offer(new Pair(i,j));
+                    minutesTaken[i][j]=0;
+                }
+            }
+        }        
+        Pair pair;
+        int newRow,newCol;
+        int lastMinutesTaken;
+        while(!queue.isEmpty()){
+            pair = queue.poll();
+            lastMinutesTaken = minutesTaken[pair.row][pair.col];
+            for(int i=0;i<4;i++) {
+
+                newRow = pair.row+dirRow[i];
+                newCol = pair.col+dirCol[i];
+                
+                if(newRow>=0 && newRow<rowLen && newCol>=0 && newCol<colLen 
+                            && grid[newRow][newCol]==1 && minutesTaken[newRow][newCol]>lastMinutesTaken+1){
+                    grid[newRow][newCol]=2;
+                    minutesTaken[newRow][newCol]=lastMinutesTaken+1 ;
+                    queue.offer(new Pair(newRow,newCol));
+                }
+            }
+        }
+    }
+
+    private int findMinimumTime(int[][] grid,int[][] minutesTaken,int rowLen,int colLen) {
+        int minTime = 0;
+        for(int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++){
+                if(grid[i][j]==1)
+                    return -1;
+                if(grid[i][j]==2) {
+                    minTime = Math.max(minTime,minutesTaken[i][j]);
+                }
+            }
+        }
+        return minTime;
+    }
+
+
+    public int orangesRotting(int[][] grid) {
+        int rowLen = grid.length;
+        int colLen = grid[0].length;
+
+        int[][] minutesTaken = new int[rowLen][colLen];
+        for(int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++) {
+                minutesTaken[i][j]=Integer.MAX_VALUE;
+            }
+        }
+        bfsOrangesRotten(grid,minutesTaken,rowLen,colLen);
+
+        int ans = findMinimumTime(grid,minutesTaken,rowLen,colLen);
+        return ans;
+    }
+}
+
+// Sorrounded Region 
+class Pair {
+    int row;
+    int col;
+    Pair(int row,int col) {
+        this.row = row;
+        this.col = col;
+    }
+}
+
+class Solution {
+    int[] dirRow = {-1,1,0,0};
+    int[] dirCol = {0,0,-1,1};
+    private void solveBFS(int[][] visited,char[][] board,int rowLen,int colLen,Queue<Pair> queue) {
+        Pair p;
+        int newRow,newCol;
+        while(!queue.isEmpty()){
+            p = queue.poll();
+            visited[p.row][p.col]=1;
+            for(int i=0;i<4;i++) {
+                newRow = p.row+dirRow[i];
+                newCol = p.col+dirCol[i];
+                if(newRow>=0 && newRow<rowLen && newCol>=0 && newCol<colLen && visited[newRow][newCol]==0 && board[newRow][newCol]=='O'){
+                    visited[newRow][newCol]=1;
+                    queue.offer(new Pair(newRow,newCol));
+                }
+            }
+        }
+        
+    }
+
+    private void updateBoard(int[][] visited,char[][] board,int rowLen,int colLen) {
+        for(int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++) {
+                if(visited[i][j]==0 && board[i][j]=='O'){
+                    board[i][j]='X';
+                }
+            }
+        }
+    }
+
+    public void solve(char[][] board) {
+        int rowLen = board.length;
+        int colLen = board[0].length;
+        int[][] visited = new int[rowLen][colLen];
+        Queue<Pair> queue = new LinkedList<>();
+        for(int i=0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++){
+                if ( board[i][j] == 'X') {
+                    visited[i][j]=2;
+                } else if ( board[i][j] == 'O') {
+                    visited[i][j]=0;
+                    if( i==0 || i==rowLen-1 || j==0 || j==colLen-1) {
+                        queue.offer(new Pair(i,j));
+                    }
+                }
+            }
+        }
+
+        solveBFS(visited,board,rowLen,colLen,queue);
+
+        updateBoard(visited,board,rowLen,colLen);
+    }
+}
