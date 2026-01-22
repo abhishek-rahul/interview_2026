@@ -562,3 +562,280 @@ class Solution {
 }
 
 // Course Schedule 1 
+
+class Solution {
+
+    private void populateGraph(ArrayList<Integer> [] graph,int[][] prerequisites){
+        int len = prerequisites.length;
+        int u,v;
+        for(int i=0;i<len;i++){
+            u = prerequisites[i][1];
+            v = prerequisites[i][0];
+            graph[u].add(v);
+        }
+    }
+
+    private boolean canFinishDFS(ArrayList<Integer> [] graph,int[] visited,int node) {
+        if(visited[node]==1){
+            return false;
+        }
+
+        if(visited[node]==2) {
+            return true;
+        }
+
+        visited[node]=1;
+
+        ArrayList<Integer> adjacentNodes = graph[node];
+        int adjacentNode;
+        for(int i=0;i<adjacentNodes.size();i++) {
+            adjacentNode = adjacentNodes.get(i);
+            if (visited[adjacentNode]==0 || visited[adjacentNode]==1) {
+                if(!canFinishDFS(graph,visited,adjacentNode)){
+                    return false;
+                }
+            }
+        }
+        visited[node]=2;
+        return true;
+    }
+
+    public boolean canFinish(int numCourses, int[][] prerequisites) {
+        ArrayList<Integer> [] graph = new ArrayList[numCourses];
+        for(int i=0;i<numCourses;i++) {
+            graph[i] = new ArrayList<Integer>();
+        }
+        populateGraph(graph,prerequisites);
+        int[] visited = new int[numCourses];
+
+        Arrays.fill(visited,0);
+
+        for(int i=0;i<numCourses;i++) {
+            if(visited[i]==0){
+                if(!canFinishDFS(graph,visited,i)){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
+
+// Course Schedule 2
+class Solution {
+
+    private void populateGraph(ArrayList<Integer> [] graph,int[][] prerequisites){
+        int len = prerequisites.length;
+        int u,v;
+        for(int i=0;i<len;i++){
+            u = prerequisites[i][1];
+            v = prerequisites[i][0];
+            graph[u].add(v);
+        }
+    }
+
+    private boolean canFinishDFS(ArrayList<Integer> [] graph,int[] visited,int node,Stack<Integer> stack) {
+        
+        if(visited[node]==1){
+            return false;
+        }
+
+        if(visited[node]==2) {
+            return true;
+        }
+
+        visited[node]=1;
+
+        ArrayList<Integer> adjacentNodes = graph[node];
+        int adjacentNode;
+        for(int i=0;i<adjacentNodes.size();i++) {
+            adjacentNode = adjacentNodes.get(i);
+            if (visited[adjacentNode]==0 || visited[adjacentNode]==1) {
+                if(!canFinishDFS(graph,visited,adjacentNode,stack)){
+                    return false;
+                }
+            }
+        }
+        visited[node]=2;
+        stack.push(node);
+        return true;
+    }
+
+    public int[] findOrder(int numCourses, int[][] prerequisites) {
+        ArrayList<Integer> [] graph = new ArrayList[numCourses];
+        Stack<Integer> stack = new Stack<>();
+        for(int i=0;i<numCourses;i++) {
+            graph[i] = new ArrayList<Integer>();
+        }
+        populateGraph(graph,prerequisites);
+        int[] visited = new int[numCourses];
+
+        Arrays.fill(visited,0);
+        int [] order={};
+
+        for(int i=0;i<numCourses;i++) {
+            if(visited[i]==0){
+                if(!canFinishDFS(graph,visited,i,stack)){
+                    return order;
+                }
+            }
+        }
+        order = new int[numCourses];
+        int cnt = 0;
+        while(!stack.empty()){
+            order[cnt]=stack.pop();
+            cnt++;
+        }
+        return order;
+    }
+}
+
+
+// Alien Dictionary [ Not the correct code  ]
+
+class Solution {
+    // populate kro lettematrix ko jahan bhi connection dikhe
+    private boolean populateGraph(String[] words,ArrayList<Character>[] graph,int[] visited) {
+        char u,v;
+        String firstWord,secondWord;
+        for (int i=0;i<words.length-1;i++) {
+            firstWord = words[i];
+            secondWord = words[i+1];
+
+            int len = Math.min(firstWord.length(),secondWord.length());
+            boolean canBePrefix=true;
+            for(int j=0;j<len;j++) {
+                if(firstWord.charAt(j)!=secondWord.charAt(j)){
+                    canBePrefix = false;
+                    u = firstWord.charAt(j);
+                    v = secondWord.charAt(j);
+                    graph[u-'a'].add(v);
+                    visited[u-'a']=0;
+                    visited[v-'a']=0;
+                    break;
+                }
+            }
+            if(canBePrefix && firstWord.length()>secondWord.length()){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 26 ka array list init karo
+    private void initGraph(ArrayList<Character>[] graph) {
+        for(int i=0;i<26;i++) {
+            graph[i] = new ArrayList<Character>();
+        }
+    }
+
+    private void fillAllVisited(String[] words,int[] allVisited) {
+        String word;
+        for(int i=0;i<words.length;i++) {
+            word = words[i];
+            for(int j=0;j<word.length();j++) {
+                allVisited[word.charAt(j)-'a']=0;
+            }
+        }
+    }
+
+    private boolean getTopoSortOrder(ArrayList<Character>[] graph,int[] visited,char source,Stack<Character> stack) {
+        if (visited[source-'a']==1){
+            return false;
+        }
+        if (visited[source-'a']==2){
+            return true;
+        }
+        visited[source-'a']=1;
+        ArrayList<Character> adjacentCharacters = graph[source-'a'];
+        char adjacentCharacter;
+        for(int i=0;i<adjacentCharacters.size();i++) {
+            adjacentCharacter = adjacentCharacters.get(i);
+            if (visited[adjacentCharacter-'a']==0) {
+                if (!getTopoSortOrder(graph,visited,adjacentCharacter,stack)){
+                    return false;
+                }
+            }
+        }
+        visited[source-'a']=2;
+        stack.push(source);
+        return true;
+    }
+
+    public String foreignDictionary(String[] words) {
+        int[] visited = new int[26];
+        int[] allVisited = new int[26];
+        Arrays.fill(visited,-1);
+        Arrays.fill(allVisited,-1);
+        ArrayList<Character>[] graph = new ArrayList[26];
+        initGraph(graph);
+        boolean isValid = true;
+        System.out.println("0.1");
+        /*
+        if(words.length==1) {
+            return "";
+        }
+        */
+        System.out.println("0.2");
+        isValid = populateGraph(words,graph,visited);
+        if ( !isValid ){
+            return "";
+        }
+        System.out.println("1");
+        Stack<Character> stack = new Stack<>();
+        // print graph  
+        for(int i=0;i<26;i++) {
+            if(visited[i]==0) {
+                System.out.println("");
+                System.out.println((char)('a'+i));
+                for(int j=0;j<graph[i].size();j++) {
+                    System.out.print(graph[i].get(j));  
+                    System.out.print(",");  
+                }
+                System.out.println("");
+            }
+        }
+        // Stack ka order decide hoga
+        for(int i=0;i<26;i++) {
+            if (visited[i]==0) {
+                char ch = (char)('a'+i);
+                isValid = getTopoSortOrder(graph,visited,ch,stack);
+                if ( !isValid ){
+                    return "";
+                }
+            }
+        }
+        System.out.println("2");
+        
+
+        // Stack ka order print karwao
+        StringBuilder sb = new StringBuilder();
+        char c;
+        boolean addOtherLetters = true;
+        fillAllVisited(words,allVisited);
+        if(!stack.empty()) {
+            fillAllVisited(words,allVisited);
+            addOtherLetters = true;
+        }
+        while(!stack.empty()) {
+            c = stack.pop();
+            sb.append(c);
+            allVisited[c-'a']=1;
+
+        }
+
+        if(addOtherLetters) {
+            System.out.println("adding leftover letters");
+            for(int i=0;i<26;i++) {
+                if(allVisited[i]==0){
+                    sb.append((char)(i+'a'));
+                    allVisited[i]=1;
+                }
+            }
+        }
+
+        String ans = sb.toString();
+        return ans;
+
+    }
+}
