@@ -980,3 +980,304 @@ class Solution {
         updateBoard(visited,board,rowLen,colLen);
     }
 }
+
+// Pacific Atlantic Water Flow :
+class Reach {
+    boolean canReachFromPacific;
+    boolean canReachFromAtlantic;
+
+    Reach(boolean canReachFromPacific, boolean canReachFromAtlantic) {
+        this.canReachFromPacific = canReachFromPacific;
+        this.canReachFromAtlantic = canReachFromAtlantic;
+    }
+}
+
+class Pair {
+    int row;
+    int col;
+
+    Pair(int row, int col) {
+        this.row = row;
+        this.col = col;
+    }
+}
+
+class Solution {
+
+    int[] dirRow = { -1, 1, 0, 0 };
+    int[] dirCol = { 0, 0, -1, 1 };
+
+    // heights,visited,reach,rowLen,colLen,Ocean.PACIFIC,queue
+    private void bfs(int[][] heights, boolean[][] visited, Reach[][] reach, int rowLen, int colLen, boolean isPacific,
+            Queue<Pair> queue) {
+        int newRow,newCol;
+        Pair p;
+        int lastHeight;
+        while(!queue.isEmpty()) {
+            p = queue.poll();
+            visited[p.row][p.col] = true;
+            if(isPacific) {
+                reach[p.row][p.col].canReachFromPacific = true;
+            }else {
+                reach[p.row][p.col].canReachFromAtlantic = true;
+            }
+            lastHeight = heights[p.row][p.col];
+            for(int i=0;i<4;i++) {
+                newRow = p.row+dirRow[i];
+                newCol = p.col+dirCol[i];
+
+
+                if(newRow>=0 && newRow<rowLen && newCol>=0 && newCol<colLen && visited[newRow][newCol]==false && heights[newRow][newCol]>=lastHeight) {
+                    if(isPacific) {
+                        reach[newRow][newCol].canReachFromPacific = true;
+                    }else {
+                        reach[newRow][newCol].canReachFromAtlantic = true;
+                    }
+                    visited[newRow][newCol]=true;
+                    queue.offer(new Pair(newRow,newCol));                  
+                }
+            }
+        }
+    }
+
+    public List<List<Integer>> pacificAtlantic(int[][] heights) {
+        int rowLen = heights.length;
+        int colLen = heights[0].length;
+        Reach[][] reach = new Reach[rowLen][colLen];
+        boolean[][] visited = new boolean[rowLen][colLen];
+        for (int i = 0; i < rowLen; i++) {
+            for (int j = 0; j < colLen; j++) {
+                reach[i][j] = new Reach(false, false);
+                visited[i][j] = false;
+            }
+        }
+        Queue<Pair> queue = new LinkedList<>();
+        int row;
+        int col;
+        row = 0;
+        for (col = 0; col < colLen; col++) {
+            reach[row][col].canReachFromPacific = true;
+            visited[row][col] = true;
+            queue.offer(new Pair(row, col));
+        }
+        col = 0;
+        for (row = 1; row < rowLen; row++) {
+            reach[row][col].canReachFromPacific = true;
+            visited[row][col] = true;
+            queue.offer(new Pair(row, col));
+        }
+        bfs(heights, visited, reach, rowLen, colLen, true, queue);
+        queue.clear();
+
+        for (int i = 0; i < rowLen; i++) {
+            for (int j = 0; j < colLen; j++) {
+                visited[i][j] = false;
+            }
+        }
+        row = rowLen - 1;
+        for (col = 0; col < colLen; col++) {
+            reach[row][col].canReachFromAtlantic = true;
+            visited[row][col] = true;
+            queue.offer(new Pair(row, col));
+        }
+        col = colLen - 1;
+        for (row = 0; row < rowLen - 1; row++) {
+            reach[row][col].canReachFromAtlantic = true;
+            visited[row][col] = true;
+            queue.offer(new Pair(row, col));
+        }
+        bfs(heights, visited, reach, rowLen, colLen, false, queue);
+        queue.clear();
+        List<List<Integer>> ans = new ArrayList<List<Integer>>();
+        for (int i = 0; i < rowLen; i++) {
+            for (int j = 0; j < colLen; j++) {
+                if(reach[i][j].canReachFromPacific && reach[i][j].canReachFromAtlantic) {
+                    List<Integer> lst = new ArrayList<>();
+                    lst.add(i);
+                    lst.add(j);
+                    ans.add(lst);
+                }
+            }
+        }
+        return ans;
+    }
+}
+
+
+// Max area of Island :
+
+class Solution {
+
+    int[] drow = {-1,1,0,0};
+    int[] dcol = {0,0,-1,1};
+
+    private static int sum = 0;
+    
+    private void dfs(int i,int j,int rowLen , int colLen, int[][] grid) {
+        int trow,tcol;
+        if(i<0 || i>rowLen || j<0 || j>colLen || grid[i][j]==0)
+            return ;
+        else {
+            sum++;
+        }
+        grid[i][j] = 0;
+        
+        for(int k=0;k<4;k++){
+            trow = i + drow[k];
+            tcol = j + dcol[k];
+            if( (trow>=0 && trow<rowLen && tcol>=0 && tcol<colLen ) && grid[trow][tcol]==1){
+                dfs(trow,tcol,rowLen,colLen,grid);            }
+        }
+    }
+
+    public int maxAreaOfIsland(int[][] grid) {
+        int maxi = 0;
+        int rowLen = grid.length;
+        int colLen = grid[0].length;
+        for(int i = 0;i<rowLen;i++) {
+            for(int j=0;j<colLen;j++) {
+                if( grid[i][j]==1) {
+                    sum = 0;
+                    dfs(i,j,rowLen,colLen,grid);
+                    maxi = Math.max(sum,maxi);
+                }
+            }
+        }
+        return maxi;
+    }
+}
+
+// Graph is Valid Tree 
+class Solution {
+
+    private void initAndPopulateGraph(int n, int[][] edges,ArrayList<Integer>[] graph) {
+        for(int i=0;i<n;i++) {
+            graph[i] = new ArrayList<Integer>();
+        }
+        int len = edges.length;
+        int u,v;
+        for(int i=0;i<len;i++){
+            u = edges[i][0];
+            v = edges[i][1];
+            graph[u].add(v);
+            graph[v].add(u);
+        }
+    }
+
+    private boolean cycleExist(ArrayList<Integer>[] graph ,int[] visited ,int source,int parent) {
+        visited[source] = 1;
+
+        ArrayList<Integer> adjacentNodes = graph[source];
+        int adjacentNode;
+        for(int i=0;i<adjacentNodes.size();i++) {
+            adjacentNode = adjacentNodes.get(i);
+            if (visited[adjacentNode]==0){
+                if(cycleExist(graph ,visited ,adjacentNode,source)){
+                    return true;
+                }
+            }else if (adjacentNode!=parent) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean validTree(int n, int[][] edges) {
+        ArrayList<Integer>[] graph = new ArrayList[n];
+        initAndPopulateGraph(n,edges,graph);
+        int[] visited = new int[n];
+        Arrays.fill(visited,0);
+        if(cycleExist(graph,visited,0,-1)) {
+            return false;
+        }
+        for(int i=0;i<n;i++) {
+            if(visited[i]==0){
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+// Number of connected Components 
+
+class Solution {
+
+    private void initAndPopulateGraph(int n, int[][] edges,ArrayList<Integer>[] graph) {
+        for(int i=0;i<n;i++) {
+            graph[i] = new ArrayList<Integer>();
+        }
+        int len = edges.length;
+        int u,v;
+        for(int i=0;i<len;i++){
+            u = edges[i][0];
+            v = edges[i][1];
+            graph[u].add(v);
+            graph[v].add(u);
+        }
+    }
+
+    private void dfs(ArrayList<Integer>[] graph,int[] visited,int source,int parent) {
+        visited[source] = 1;
+        ArrayList<Integer> adjacentNodes = graph[source];
+        int adjacentNode;
+        for(int i=0;i<adjacentNodes.size();i++) {
+            adjacentNode = adjacentNodes.get(i);
+            if (visited[adjacentNode]==0 && adjacentNode!=parent){
+                dfs(graph ,visited ,adjacentNode,source);
+            }
+        }        
+    }
+
+
+    public int countComponents(int n, int[][] edges) {
+        ArrayList<Integer>[] graph = new ArrayList[n];
+        initAndPopulateGraph(n,edges,graph);
+        int[] visited = new int[n];
+        Arrays.fill(visited,0);
+        int componentCounts = 0;
+
+        for(int i=0;i<n;i++) {
+            if(visited[i]==0){
+                dfs(graph,visited,i,-1);
+                componentCounts++;
+            }
+        }
+        return componentCounts;        
+    }
+}
+
+
+// Bipartite Graph 
+
+    private boolean isBipartite(int source,int[][] graph,int[] visited,int color) {
+        visited[source]=color;
+        int adjacentNodes;
+
+        for(int i=0;i<graph[source].length;i++) {
+            adjacentNodes = graph[source][i];
+            if(visited[adjacentNodes]==color) {
+                return false;
+            }else if (visited[adjacentNodes]==0) {
+                if ( !isBipartite(adjacentNodes,graph,visited,3-color) ) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean isBipartite(int[][] graph) {
+        int rowLen;
+        rowLen = graph.length;
+        int[] visited = new int[rowLen];
+        for(int i=0;i<rowLen;i++) {
+            if (visited[i]==0) {
+                if(!isBipartite(i,graph,visited,1)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+}
