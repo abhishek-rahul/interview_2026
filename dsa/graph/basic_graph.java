@@ -1281,3 +1281,98 @@ class Solution {
         return true;
     }
 }
+
+// Network Delay Time :
+class Pair {
+    int node;
+    int weight;
+    Pair(int node,int weight) {
+        this.node = node;
+        this.weight = weight;
+    }
+}
+
+class PairWeightComparator implements Comparator<Pair> {
+    @Override
+    public int compare(Pair a, Pair b) {
+        if  (a.weight < b.weight ) {
+            return -1;
+        } else if(a.weight > b.weight ) {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+class Solution {
+    
+    private void initGraph(ArrayList<Pair> [] graph,int n){
+        for(int i=0;i<n;i++){
+            graph[i] = new ArrayList<>();
+        }        
+    }
+    private void populateGraph(ArrayList<Pair> [] graph,int[][] time){
+        int len = time.length;
+        int u,v,w;
+        for(int i=0;i<len;i++){
+            u = time[i][0]-1;
+            v = time[i][1]-1;
+            w = time[i][2];
+            graph[u].add(new Pair(v,w));
+        }
+    }
+
+    private void dijkstras(ArrayList<Pair>[] graph,int[] dist,int source,int n){
+        dist[source] = 0;
+        PriorityQueue<Pair> pq = new PriorityQueue<>(new PairWeightComparator());
+        pq.offer(new Pair(source, 0));
+        Pair curr,next;
+        int currNode,currDistance;
+        int nextNode,edgeWeight;
+        while(!pq.isEmpty()){
+            curr = pq.poll();
+            currNode = curr.node;
+            currDistance = curr.weight;
+
+            if (currDistance>dist[currNode]) {
+                continue;
+            }
+
+            for(int i=0;i<graph[currNode].size();i++){
+                next = graph[currNode].get(i);
+                nextNode = next.node;
+                edgeWeight = next.weight;
+
+                if (dist[currNode] != Integer.MAX_VALUE && dist[currNode] + edgeWeight < dist[nextNode]) {
+                    dist[nextNode] = dist[currNode] + edgeWeight;
+                    pq.offer(new Pair(nextNode, dist[nextNode]));
+                }                
+            }
+        }
+    }
+
+    private int findMaxDist(int[] dist) {
+        int maxi = Integer.MIN_VALUE;
+        for(int i=0;i<dist.length;i++) {
+            maxi = Math.max(maxi,dist[i]);
+        }
+        return maxi;
+    }
+
+    public int networkDelayTime(int[][] times, int n, int k) {
+        int[] dist = new int[n];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[k-1] = 0;
+        ArrayList<Pair>[] graph = new ArrayList[n];
+        initGraph(graph,n);
+        populateGraph(graph,times);
+        dijkstras(graph,dist,k-1,n);
+        int maxTime = findMaxDist(dist);
+        if ( maxTime == Integer.MAX_VALUE){
+            return -1;
+        }
+        return maxTime;
+    }
+}
+
+
