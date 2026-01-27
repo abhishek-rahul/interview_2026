@@ -1,0 +1,195 @@
+@startuml Parking Lot Sequence Diagram
+
+title Parking Lot - park() and unpark() Sequence Diagram
+
+actor Client
+participant "ParkingLotService" as Service
+participant "SpotAllocationPolicy" as Policy
+participant "ParkingLot" as Lot
+participant "ParkingFloor" as Floor
+participant "ParkingSpot" as Spot
+participant "TicketIdGenerator" as IdGen
+participant "Clock" as Clock
+participant "Ticket" as Ticket
+participant "FeeCalculationPolicy" as FeePolicy
+participant "activeTickets" as ActiveTickets
+participant "closedTickets" as ClosedTickets
+
+== park() Flow ==
+
+Client -> Service: park(vehicle)
+activate Service
+
+Service -> Service: validate vehicle != null
+alt vehicle is null
+    Service --> Client: throw IllegalArgumentException
+else vehicle is valid
+    Service -> Policy: findSpot(parkingLot, vehicle)
+    activate Policy
+    
+    Policy -> Lot: getFloors()
+    activate Lot
+    Lot --> Policy: List<ParkingFloor>
+    deactivate Lot
+    
+    loop for each floor
+        Policy -> Floor: getSpots()
+        activate Floor
+        Floor --> Policy: List<ParkingSpot>
+        deactivate Floor
+        
+        loop for each spot
+            Policy -> Spot: isFree()
+            activate Spot
+            Spot --> Policy: boolean
+            deactivate Spot
+            
+            Policy -> Spot: getSpotType()
+            activate Spot
+            Spot --> Policy: VehicleType
+            deactivate Spot
+        end
+    end
+    
+    alt spot found
+        Policy --> Service: ParkingSpot
+        deactivate Policy
+        
+        Service -> Spot: occupy(vehicle)
+        activate Spot
+        Spot -> Spot: validate vehicle != null
+        Spot -> Spot: validate !occupied
+        Spot -> Spot: validate vehicle.type == spotType
+        Spot -> Spot: set parkedVehicle = vehicle
+        Spot -> Spot: set occupied = true
+        Spot --> Service: void
+        deactivate Spot
+        
+        Service -> IdGen: nextId()
+        activate IdGen
+        IdGen --> Service: ticketId (String)
+        deactivate IdGen
+        
+        Service -> Clock: nowMillis()
+        activate Clock
+        Clock --> Service: entryTime (long)
+        deactivate Clock
+        
+        Service -> Spot: getSpotId()
+        activate Spot
+        Spot --> Service: spotId
+        deactivate Spot
+        
+        Service -> Ticket: new Ticket(ticketId, vehicleNumber, vehicleType, spotId, entryTime)
+        activate Ticket
+        Ticket -> Ticket: initialize fields
+        Ticket -> Ticket: set status = ACTIVE
+        Ticket --> Service: Ticket instance
+        deactivate Ticket
+        
+        Service -> ActiveTickets: put(ticketId, ticket)
+        activate ActiveTickets
+        ActiveTickets --> Service: void
+        deactivate ActiveTickets
+        
+        Service --> Client: Ticket
+    else no spot available
+        Policy --> Service: null
+        deactivate Policy
+        Service --> Client: throw NoSpotAvailableException
+    end
+end
+
+deactivate Service
+
+== unpark() Flow ==
+
+Client -> Service: unpark(ticketId)
+activate Service
+
+Service -> Service: validate ticketId != null && !empty
+alt ticketId is invalid
+    Service --> Client: throw IllegalArgumentException
+else ticketId is valid
+    Service -> ActiveTickets: get(ticketId)
+    activate ActiveTickets
+    ActiveTickets --> Service: Ticket or null
+    deactivate ActiveTickets
+    
+    alt ticket not found in activeTickets
+        Service -> ClosedTickets: containsKey(ticketId)
+        activate ClosedTickets
+        ClosedTickets --> Service: boolean
+        deactivate ClosedTickets
+        
+        alt ticket in closedTickets
+            Service --> Client: throw TicketAlreadyClosedException
+        else ticket not found anywhere
+            Service --> Client: throw InvalidTicketException
+        end
+    else ticket found
+        Service -> Clock: nowMillis()
+        activate Clock
+        Clock --> Service: exitTime (long)
+        deactivate Clock
+        
+        Service -> FeePolicy: calculateFee(ticket, exitTime)
+        activate FeePolicy
+        FeePolicy -> Ticket: getEntryTimeMillis()
+        activate Ticket
+        Ticket --> FeePolicy: entryTimeMillis
+        deactivate Ticket
+        
+        FeePolicy -> FeePolicy: duration = exitTime - entryTime
+        FeePolicy -> FeePolicy: hours = ceil(duration / ONE_HOUR_MILLIS)
+        FeePolicy -> FeePolicy: rate = rateCard.ratePerHour(vehicleType)
+        FeePolicy -> FeePolicy: fee = hours * rate
+        FeePolicy --> Service: fee (double)
+        deactivate FeePolicy
+        
+        Service -> Ticket: getSpotId()
+        activate Ticket
+        Ticket --> Service: spotId
+        deactivate Ticket
+        
+        Service -> Lot: getSpotById(spotId)
+        activate Lot
+        Lot --> Service: ParkingSpot
+        deactivate Lot
+        
+        Service -> Spot: vacate()
+        activate Spot
+        Spot -> Spot: validate occupied == true
+        Spot -> Spot: set parkedVehicle = null
+        Spot -> Spot: set occupied = false
+        Spot --> Service: void
+        deactivate Spot
+        
+        Service -> Ticket: close(exitTime, fee)
+        activate Ticket
+        Ticket -> Ticket: validate status != CLOSED
+        Ticket -> Ticket: validate exitTime >= entryTime
+        Ticket -> Ticket: validate fee >= 0
+        Ticket -> Ticket: set exitTimeMillis = exitTime
+        Ticket -> Ticket: set feePaid = fee
+        Ticket -> Ticket: set status = CLOSED
+        Ticket --> Service: void
+        deactivate Ticket
+        
+        Service -> ActiveTickets: remove(ticketId)
+        activate ActiveTickets
+        ActiveTickets --> Service: void
+        deactivate ActiveTickets
+        
+        Service -> ClosedTickets: put(ticketId, ticket)
+        activate ClosedTickets
+        ClosedTickets --> Service: void
+        deactivate ClosedTickets
+        
+        Service --> Client: fee (double)
+    end
+end
+
+deactivate Service
+
+@enduml

@@ -1,0 +1,228 @@
+@startuml Parking Lot Class Diagram
+
+title Parking Lot System - Complete Class Diagram
+
+package "domain" {
+    class Vehicle {
+        - String vehicleNumber
+        - VehicleType type
+        + Vehicle(String vehicleNumber, VehicleType type)
+        + String getVehicleNumber()
+        + VehicleType getType()
+    }
+
+    class ParkingLot {
+        - String lotId
+        - List<ParkingFloor> floors
+        - Map<String, ParkingSpot> spotById
+        + ParkingLot(String lotId, List<ParkingFloor> floors)
+        + String getLotId()
+        + List<ParkingFloor> getFloors()
+        + ParkingSpot getSpotById(String spotId)
+    }
+
+    class ParkingFloor {
+        - String floorId
+        - List<ParkingSpot> spots
+        + ParkingFloor(String floorId, List<ParkingSpot> spots)
+        + String getFloorId()
+        + List<ParkingSpot> getSpots()
+    }
+
+    class ParkingSpot {
+        - String spotId
+        - VehicleType spotType
+        - boolean occupied
+        - Vehicle parkedVehicle
+        + ParkingSpot(String spotId, VehicleType spotType)
+        + String getSpotId()
+        + VehicleType getSpotType()
+        + boolean isOccupied()
+        + boolean isFree()
+        + Vehicle getParkedVehicle()
+        + void occupy(Vehicle vehicle)
+        + void vacate()
+    }
+
+    class Ticket {
+        - String ticketId
+        - String vehicleNumber
+        - VehicleType vehicleType
+        - String spotId
+        - long entryTimeMillis
+        - TicketStatus status
+        - Long exitTimeMillis
+        - Double feePaid
+        + Ticket(String ticketId, String vehicleNumber, VehicleType vehicleType, String spotId, long entryTimeMillis)
+        + String getTicketId()
+        + String getVehicleNumber()
+        + VehicleType getVehicleType()
+        + String getSpotId()
+        + long getEntryTimeMillis()
+        + TicketStatus getStatus()
+        + Long getExitTimeMillis()
+        + Double getFeePaid()
+        + boolean isActive()
+        + void close(long exitTimeMillis, double feePaid)
+    }
+}
+
+package "domain.enums" {
+    enum VehicleType {
+        BIKE
+        CAR
+        TRUCK
+    }
+
+    enum TicketStatus {
+        ACTIVE
+        CLOSED
+    }
+}
+
+package "service" {
+    class ParkingLotService {
+        - ParkingLot parkingLot
+        - SpotAllocationPolicy allocationPolicy
+        - FeeCalculationPolicy feePolicy
+        - Clock clock
+        - TicketIdGenerator ticketIdGenerator
+        - Map<String, Ticket> activeTickets
+        - Map<String, Ticket> closedTickets
+        + ParkingLotService(ParkingLot parkingLot, SpotAllocationPolicy allocationPolicy, FeeCalculationPolicy feePolicy, Clock clock, TicketIdGenerator ticketIdGenerator)
+        + Ticket park(Vehicle vehicle)
+        + double unpark(String ticketId)
+        + int getActiveTicketCount()
+    }
+}
+
+package "policy" {
+    interface SpotAllocationPolicy {
+        + ParkingSpot findSpot(ParkingLot lot, Vehicle vehicle)
+    }
+
+    interface FeeCalculationPolicy {
+        + double calculateFee(Ticket ticket, long exitTimeMillis)
+    }
+
+    class RateCard {
+        - Map<VehicleType, Double> hourlyRateByType
+        + RateCard(double bikePerHour, double carPerHour, double truckPerHour)
+        + double ratePerHour(VehicleType type)
+    }
+}
+
+package "policy.impl" {
+    class FirstAvailableSpotPolicy {
+        + ParkingSpot findSpot(ParkingLot lot, Vehicle vehicle)
+    }
+
+    class HourlyFeePolicy {
+        - RateCard rateCard
+        - static long ONE_HOUR_MILLIS
+        + HourlyFeePolicy(RateCard rateCard)
+        + double calculateFee(Ticket ticket, long exitTimeMillis)
+    }
+}
+
+package "util" {
+    interface Clock {
+        + long nowMillis()
+    }
+
+    interface TicketIdGenerator {
+        + String nextId()
+    }
+
+    class SystemClock {
+        + long nowMillis()
+    }
+
+    class FakeClock {
+        - long now
+        + FakeClock(long startMillis)
+        + long nowMillis()
+        + void advanceMillis(long delta)
+    }
+
+    class UuidTicketIdGenerator {
+        + String nextId()
+    }
+}
+
+package "exceptions" {
+    class InvalidTicketException {
+        + InvalidTicketException(String message)
+    }
+
+    class NoSpotAvailableException {
+        + NoSpotAvailableException(String message)
+    }
+
+    class SpotAlreadyFreeException {
+        + SpotAlreadyFreeException(String message)
+    }
+
+    class SpotAlreadyOccupiedException {
+        + SpotAlreadyOccupiedException(String message)
+    }
+
+    class SpotTypeMismatchException {
+        + SpotTypeMismatchException(String message)
+    }
+
+    class TicketAlreadyClosedException {
+        + TicketAlreadyClosedException(String message)
+    }
+}
+
+' Relationships - Domain
+ParkingLot "1" *-- "many" ParkingFloor : contains
+ParkingFloor "1" *-- "many" ParkingSpot : contains
+ParkingSpot "0..1" --> "1" Vehicle : parkedVehicle
+ParkingSpot --> VehicleType : uses
+Vehicle --> VehicleType : uses
+Ticket --> VehicleType : uses
+Ticket --> TicketStatus : uses
+Ticket --> ParkingSpot : references
+
+' Relationships - Service
+ParkingLotService --> ParkingLot : uses
+ParkingLotService --> SpotAllocationPolicy : uses
+ParkingLotService --> FeeCalculationPolicy : uses
+ParkingLotService --> Clock : uses
+ParkingLotService --> TicketIdGenerator : uses
+ParkingLotService "1" *-- "many" Ticket : manages
+
+' Relationships - Policy
+SpotAllocationPolicy <|.. FirstAvailableSpotPolicy : implements
+FeeCalculationPolicy <|.. HourlyFeePolicy : implements
+HourlyFeePolicy --> RateCard : uses
+SpotAllocationPolicy --> ParkingLot : uses
+SpotAllocationPolicy --> Vehicle : uses
+FeeCalculationPolicy --> Ticket : uses
+RateCard --> VehicleType : uses
+
+' Relationships - Util
+Clock <|.. SystemClock : implements
+Clock <|.. FakeClock : implements
+TicketIdGenerator <|.. UuidTicketIdGenerator : implements
+
+' Relationships - Exceptions
+RuntimeException <|-- InvalidTicketException : extends
+RuntimeException <|-- NoSpotAvailableException : extends
+RuntimeException <|-- SpotAlreadyFreeException : extends
+RuntimeException <|-- SpotAlreadyOccupiedException : extends
+RuntimeException <|-- SpotTypeMismatchException : extends
+RuntimeException <|-- TicketAlreadyClosedException : extends
+
+' Exception throwing relationships (dependencies)
+ParkingLotService ..> InvalidTicketException : throws
+ParkingLotService ..> NoSpotAvailableException : throws
+ParkingLotService ..> TicketAlreadyClosedException : throws
+ParkingSpot ..> SpotAlreadyOccupiedException : throws
+ParkingSpot ..> SpotTypeMismatchException : throws
+ParkingSpot ..> SpotAlreadyFreeException : throws
+Ticket ..> TicketAlreadyClosedException : throws
+
+@enduml
