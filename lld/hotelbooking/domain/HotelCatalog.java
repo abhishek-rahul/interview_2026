@@ -8,7 +8,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class HotelCatalog {
-    private final Map<String , Hotel> hotelsById = new HashMap<>();
+    // Hotels
+    private final Map<String, Hotel> hotelsById = new HashMap<>();
+
+    // Bookings
+    private final Map<String, Booking> bookingsById = new HashMap<>();
+
     public void addHotel(Hotel hotel) {
         hotelsById.put(hotel.getId(), hotel);
     }
@@ -30,4 +35,14 @@ public class HotelCatalog {
         result.sort(Comparator.comparing(Hotel::getId));
         return result;
     }    
+
+    // ✅ Step 7 support: store booking
+    public void saveBooking(Booking booking) {
+        bookingsById.put(booking.getId(), booking);
+    }
+
+    // support for getBooking()
+    public Booking getBooking(String bookingId) {
+        return bookingsById.get(bookingId);
+    }
 }
