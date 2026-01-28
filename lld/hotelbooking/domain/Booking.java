@@ -21,9 +21,9 @@ public class Booking {
     private final LocalDateTime createdAt;
 
     public Booking(String id, String hotelId, String roomType,
-                   LocalDate checkIn, LocalDate checkOut,
-                   int guests, int roomsQty,
-                   long totalPrice, LocalDateTime createdAt) {
+            LocalDate checkIn, LocalDate checkOut,
+            int guests, int roomsQty,
+            long totalPrice, LocalDateTime createdAt) {
         this.id = Objects.requireNonNull(id);
         this.hotelId = Objects.requireNonNull(hotelId);
         this.roomType = Objects.requireNonNull(roomType);
@@ -36,19 +36,55 @@ public class Booking {
         this.status = BookingStatus.CONFIRMED;
     }
 
-    public String getId() { return id; }
-    public String getHotelId() { return hotelId; }
-    public String getRoomType() { return roomType; }
-    public LocalDate getCheckIn() { return checkIn; }
-    public LocalDate getCheckOut() { return checkOut; }
-    public int getGuests() { return guests; }
-    public int getRoomsQty() { return roomsQty; }
-    public long getTotalPrice() { return totalPrice; }
-    public BookingStatus getStatus() { return status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public String getId() {
+        return id;
+    }
+
+    public String getHotelId() {
+        return hotelId;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public LocalDate getCheckIn() {
+        return checkIn;
+    }
+
+    public LocalDate getCheckOut() {
+        return checkOut;
+    }
+
+    public int getGuests() {
+        return guests;
+    }
+
+    public int getRoomsQty() {
+        return roomsQty;
+    }
+
+    public long getTotalPrice() {
+        return totalPrice;
+    }
+
+    public BookingStatus getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
     // NOTE: No markCancelled() yet (we’ll add when cancel() flow is implemented)
     public void setStatus(BookingStatus status) {
         this.status = Objects.requireNonNull(status);
+    }
+
+    public void cancel() {
+        if (status == BookingStatus.CANCELLED) {
+            throw new IllegalStateException("Already cancelled: " + id);
+        }
+        status = BookingStatus.CANCELLED;
     }
 }

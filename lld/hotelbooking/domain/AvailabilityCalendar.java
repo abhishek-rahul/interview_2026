@@ -39,4 +39,11 @@ public class AvailabilityCalendar {
             qtyByDate.put(d, next);
         }
     }
+
+    public void increment(LocalDate checkIn, LocalDate checkOut, int qty) {
+        for (LocalDate d = checkIn; d.isBefore(checkOut); d = d.plusDays(1)) {
+            int current = qtyByDate.getOrDefault(d, 0);
+            qtyByDate.put(d, current + qty);
+        }
+    }
 }

@@ -11,6 +11,7 @@ import lld.hotelbooking.domain.RoomInventory;
 import lld.hotelbooking.util.IdGenerator;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -113,6 +114,58 @@ public class HotelBookingService {
         return bookingId;
     }
 
+    public Booking getBooking(String bookingId) {
+        if (bookingId == null || bookingId.trim().isEmpty()) {
+            throw new IllegalArgumentException("bookingId required");
+        }
+
+        Booking b = catalog.getBooking(bookingId);
+        if (b == null) {
+            throw new IllegalArgumentException("Booking not found: " + bookingId);
+        }
+        return b;
+    }
+
+    public CancellationReceipt cancel(String bookingId, LocalDateTime cancelTime) {
+
+        if (bookingId == null || bookingId.trim().isEmpty()) {
+            throw new IllegalArgumentException("bookingId required");
+        }
+        if (cancelTime == null) {
+            throw new IllegalArgumentException("cancelTime required");
+        }
+
+        // 1) load booking
+        Booking booking = catalog.getBooking(bookingId);
+        if (booking == null) {
+            throw new IllegalArgumentException("Booking not found: " + bookingId);
+        }
+
+        // 2) cancel guard (entity owns invariant)
+        booking.cancel();
+
+        // 3) compute cancellation outcome via policy
+        long[] rf = cancellationPolicy.evaluate(booking, cancelTime);
+        long refund = rf[0];
+        long fee = rf[1];
+
+        // 4) release/increment availability back
+        Hotel hotel = catalog.getHotel(booking.getHotelId());
+        if (hotel == null) {
+            throw new IllegalStateException("Hotel missing for booking: " + booking.getHotelId());
+        }
+
+        RoomInventory inv = hotel.getInventory(booking.getRoomType());
+        if (inv == null) {
+            throw new IllegalStateException("RoomType missing for booking: " + booking.getRoomType());
+        }
+
+        inv.getCalendar().increment(booking.getCheckIn(), booking.getCheckOut(), booking.getRoomsQty());
+
+        // 5) return receipt
+        return new CancellationReceipt(bookingId, refund, fee);
+    }
+
     private void validateSearchInputs(String city, LocalDate checkIn, LocalDate checkOut, int guests) {
         if (city == null || city.trim().isEmpty())
             throw new IllegalArgumentException("city is required");
@@ -128,8 +181,6 @@ public class HotelBookingService {
         return hotel.getId() + " | " + hotel.getName() + " | " + inv.getRoomType() + " | " +
                 inv.getPricePerNight() + " | " + total + " | " + minAvail;
     }
-
-    // Other methods remain TODO for now (as per our plan)
 
     private void validateBookInputs(String hotelId, String roomType,
             LocalDate checkIn, LocalDate checkOut,
