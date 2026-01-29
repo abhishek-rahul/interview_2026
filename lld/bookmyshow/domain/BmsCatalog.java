@@ -35,6 +35,14 @@ public class BmsCatalog {
         throw new UnsupportedOperationException("TODO");
     }
 
+    public Show findShowById(String showId) {
+        for (Show s : shows) {
+            if (s.getId().equals(showId))
+                return s;
+        }
+        return null;
+    }
+
     public List<Show> findShows(String city, String movieId, LocalDate date) {
         List<Show> result = new ArrayList<>();
 

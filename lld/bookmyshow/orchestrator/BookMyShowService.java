@@ -1,6 +1,7 @@
 package lld.bookmyshow.orchestrator;
 
 import lld.bookmyshow.domain.BmsCatalog;
+import lld.bookmyshow.domain.SeatState;
 import lld.bookmyshow.domain.Show;
 import lld.bookmyshow.policy.SeatAllocationPolicy;
 import lld.bookmyshow.policy.SeatLockPolicy;
@@ -52,7 +53,36 @@ public class BookMyShowService {
     }
 
     public List<String> viewSeats(String showId, Instant now) {
-        throw new UnsupportedOperationException("TODO");
+
+        if (showId == null || showId.trim().isEmpty()) {
+            throw new IllegalArgumentException("showId required");
+        }
+        if (now == null) {
+            throw new IllegalArgumentException("now required");
+        }
+
+        Show show = catalog.findShowById(showId);
+        if (show == null) {
+            throw new IllegalArgumentException("Show not found: " + showId);
+        }
+
+        // Ensure user sees fresh state
+        seatLockPolicy.cleanupExpired(show, now);
+
+        List<String> out = new java.util.ArrayList<>();
+
+        // Print in seat layout order (list), not map order
+        for (var seat : show.getSeats()) {
+            SeatState st = show.getSeatState(seat.getId());
+
+            String owner = (st.getLockOwnerUserId() == null) ? "-" : st.getLockOwnerUserId();
+            String expiry = (st.getLockExpiry() == null) ? "-" : st.getLockExpiry().toString();
+            String bookingId = (st.getBookingId() == null) ? "-" : st.getBookingId();
+
+            out.add(seat.getId() + " | " + st.getStatus() + " | " + owner + " | " + expiry + " | " + bookingId);
+        }
+
+        return out;
     }
 
     public String lockSeats(String showId, String userId, List<String> seatIds, Instant now) {

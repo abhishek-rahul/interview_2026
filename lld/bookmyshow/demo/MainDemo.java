@@ -1,13 +1,14 @@
 package lld.bookmyshow.demo;
 import lld.bookmyshow.domain.BmsCatalog;
 import lld.bookmyshow.domain.Movie;
+import lld.bookmyshow.domain.Seat;
 import lld.bookmyshow.domain.Show;
 import lld.bookmyshow.orchestrator.BookMyShowService;
 import lld.bookmyshow.policy.impl.SimpleSeatAllocationPolicy;
 import lld.bookmyshow.policy.impl.SimpleSeatLockPolicy;
 import lld.bookmyshow.util.SimpleIdGenerator;
 
-
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +29,13 @@ public class MainDemo {
         // Shows for Bangalore on 2026-02-10
         Show s1 = new Show("S1", "Bangalore", "PVR-Koramangala", "Screen-1",
                 LocalDateTime.of(2026, 2, 10, 10, 0), m1);
+
+        // ✅ Seed seats for S1
+        s1.addSeat(new Seat("A1", "A", 1));
+        s1.addSeat(new Seat("A2", "A", 2));
+        s1.addSeat(new Seat("A3", "A", 3));
+        s1.addSeat(new Seat("A4", "A", 4));
+        s1.addSeat(new Seat("A5", "A", 5));
 
         Show s2 = new Show("S2", "Bangalore", "PVR-Koramangala", "Screen-2",
                 LocalDateTime.of(2026, 2, 10, 13, 30), m1);
@@ -70,5 +78,16 @@ public class MainDemo {
         System.out.println("\n--- LIST SHOWS (Bangalore, Interstellar, 2026-02-11) ---\n");
         List<String> out3 = service.listShows("Bangalore", "M1", LocalDate.of(2026, 2, 11));
         if (out3.isEmpty()) System.out.println("No shows found");
+
+        List<String> shows = service.listShows("Bangalore", "M1", LocalDate.of(2026, 2, 10));
+        for (String line : shows) System.out.println(line);
+
+        // ✅ View seats for S1
+        Instant now = Instant.parse("2026-02-01T10:00:00Z");
+
+        System.out.println("\n--- VIEW SEATS (Show S1) ---\n");
+        System.out.println("seatId | status | owner | expiry | bookingId");
+        List<String> seats = service.viewSeats("S1", now);
+        for (String line : seats) System.out.println(line);
     }
 }
