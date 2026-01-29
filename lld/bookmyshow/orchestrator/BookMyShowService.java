@@ -1,12 +1,14 @@
 package lld.bookmyshow.orchestrator;
 
 import lld.bookmyshow.domain.BmsCatalog;
+import lld.bookmyshow.domain.Show;
 import lld.bookmyshow.policy.SeatAllocationPolicy;
 import lld.bookmyshow.policy.SeatLockPolicy;
 import lld.bookmyshow.util.IdGenerator;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,9 +20,9 @@ public class BookMyShowService {
     private final IdGenerator idGen;
 
     public BookMyShowService(BmsCatalog catalog,
-                             SeatAllocationPolicy seatAllocationPolicy,
-                             SeatLockPolicy seatLockPolicy,
-                             IdGenerator idGen) {
+            SeatAllocationPolicy seatAllocationPolicy,
+            SeatLockPolicy seatLockPolicy,
+            IdGenerator idGen) {
         this.catalog = Objects.requireNonNull(catalog);
         this.seatAllocationPolicy = Objects.requireNonNull(seatAllocationPolicy);
         this.seatLockPolicy = Objects.requireNonNull(seatLockPolicy);
@@ -28,7 +30,25 @@ public class BookMyShowService {
     }
 
     public List<String> listShows(String city, String movieId, LocalDate date) {
-        throw new UnsupportedOperationException("TODO");
+
+        if (city == null || movieId == null || date == null) {
+            throw new IllegalArgumentException("Invalid search params");
+        }
+
+        List<Show> shows = catalog.findShows(city, movieId, date);
+
+        List<String> result = new ArrayList<>();
+
+        for (Show show : shows) {
+            String line = show.getId() + " | " +
+                    show.getMovie().getTitle() + " | " +
+                    show.getTheatreId() + " | " +
+                    show.getScreenId() + " | " +
+                    show.getStartTime();
+
+            result.add(line);
+        }
+        return result;
     }
 
     public List<String> viewSeats(String showId, Instant now) {
