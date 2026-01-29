@@ -4,7 +4,7 @@ import lld.bookmyshow.domain.Show;
 import lld.bookmyshow.domain.SeatState;
 import lld.bookmyshow.policy.SeatLockPolicy;
 import lld.bookmyshow.domain.enums.SeatStatus;
-    
+
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -36,6 +36,12 @@ public class SimpleSeatLockPolicy implements SeatLockPolicy {
 
     @Override
     public boolean isLockValid(SeatState state, String userId, Instant now) {
-        throw new UnsupportedOperationException("TODO"); // used in confirm later
+        if (state == null) return false;
+        if (state.getStatus() != SeatStatus.LOCKED) return false;
+        if (state.getLockOwnerUserId() == null || !state.getLockOwnerUserId().equals(userId)) return false;
+        if (state.getLockExpiry() == null) return false;
+
+        // valid only if expiry is strictly after now
+        return state.getLockExpiry().isAfter(now);
     }
 }

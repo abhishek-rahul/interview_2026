@@ -4,9 +4,12 @@ import lld.bookmyshow.domain.BmsCatalog;
 import lld.bookmyshow.domain.LockToken;
 import lld.bookmyshow.domain.SeatState;
 import lld.bookmyshow.domain.Show;
+import lld.bookmyshow.domain.enums.SeatStatus;
 import lld.bookmyshow.policy.SeatAllocationPolicy;
 import lld.bookmyshow.policy.SeatLockPolicy;
 import lld.bookmyshow.util.IdGenerator;
+import lld.bookmyshow.domain.Booking;
+import lld.bookmyshow.domain.enums.BookingStatus;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -121,7 +124,63 @@ public class BookMyShowService {
     }
 
     public String confirmBooking(String lockTokenId, String userId, Instant now) {
-        throw new UnsupportedOperationException("TODO");
+
+        if (lockTokenId == null || lockTokenId.trim().isEmpty())
+            throw new IllegalArgumentException("lockTokenId required");
+        if (userId == null || userId.trim().isEmpty())
+            throw new IllegalArgumentException("userId required");
+        if (now == null)
+            throw new IllegalArgumentException("now required");
+
+        LockToken token = catalog.findLockTokenById(lockTokenId);
+        if (token == null)
+            throw new IllegalArgumentException("LockToken not found: " + lockTokenId);
+
+        if (!token.getUserId().equals(userId)) {
+            throw new IllegalStateException("LockToken does not belong to user: " + userId);
+        }
+
+        Show show = catalog.findShowById(token.getShowId());
+        if (show == null)
+            throw new IllegalStateException("Show not found for token: " + token.getShowId());
+
+        // cleanup before confirm
+        seatLockPolicy.cleanupExpired(show, now);
+
+        // validate all locks still valid
+        if (!seatAllocationPolicy.canConfirm(show, userId, token.getSeatIds(), now)) {
+            throw new IllegalStateException("Cannot confirm: lock expired or seat not locked by user");
+        }
+
+        // mark seats BOOKED
+        String bookingId = idGen.newId();
+
+        for (String seatId : token.getSeatIds()) {
+            SeatState st = show.getSeatState(seatId);
+
+            st.setStatus(SeatStatus.BOOKED);
+            st.setBookingId(bookingId);
+
+            // clear lock fields
+            st.setLockOwnerUserId(null);
+            st.setLockExpiry(null);
+        }
+
+        // create booking entity
+        Booking booking = new Booking(
+                bookingId,
+                show.getId(),
+                userId,
+                new java.util.ArrayList<>(token.getSeatIds()),
+                now);
+        booking.setStatus(BookingStatus.CONFIRMED);
+
+        catalog.addBooking(booking);
+
+        // remove token (one-time use)
+        catalog.removeLockToken(lockTokenId);
+
+        return bookingId;
     }
 
     public boolean cancelBooking(String bookingId, String userId, Instant now) {

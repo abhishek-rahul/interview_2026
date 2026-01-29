@@ -113,5 +113,15 @@ public class MainDemo {
         } catch (Exception e) {
             System.out.println("Expected failure: " + e.getMessage());
         }
+
+        System.out.println("\n--- CONFIRM BOOKING (token, user=u1) ---\n");
+        String bookingId = service.confirmBooking(tokenId, "u1", now);
+        System.out.println("bookingId = " + bookingId);
+
+        System.out.println("\n--- VIEW SEATS (Show S1) AFTER BOOKING ---\n");
+        System.out.println("seatId | status | owner | expiry | bookingId");
+        List<String> seatsAfterBooking = service.viewSeats("S1", now);
+        for (String line : seatsAfterBooking) System.out.println(line);
+
     }
 }

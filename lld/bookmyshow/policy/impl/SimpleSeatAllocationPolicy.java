@@ -36,7 +36,8 @@ public class SimpleSeatAllocationPolicy implements SeatAllocationPolicy {
         // 1) check all are AVAILABLE
         for (String seatId : seatIds) {
             SeatState st = show.getSeatState(seatId);
-            if (st == null) throw new IllegalArgumentException("Seat state missing: " + seatId);
+            if (st == null)
+                throw new IllegalArgumentException("Seat state missing: " + seatId);
 
             if (st.getStatus() != SeatStatus.AVAILABLE) {
                 throw new IllegalStateException("Seat not available: " + seatId + " status=" + st.getStatus());
@@ -55,6 +56,20 @@ public class SimpleSeatAllocationPolicy implements SeatAllocationPolicy {
 
     @Override
     public boolean canConfirm(Show show, String userId, List<String> seatIds, Instant now) {
-        throw new UnsupportedOperationException("TODO"); // used later in confirmBooking
+        for (String seatId : seatIds) {
+            SeatState st = show.getSeatState(seatId);
+            if (st == null)
+                return false;
+
+            // must be LOCKED by same user and not expired
+            if (st.getStatus() != SeatStatus.LOCKED)
+                return false;
+            if (st.getLockOwnerUserId() == null || !st.getLockOwnerUserId().equals(userId))
+                return false;
+            if (st.getLockExpiry() == null || !st.getLockExpiry().isAfter(now))
+                return false;
+        }
+        return true;
     }
+
 }

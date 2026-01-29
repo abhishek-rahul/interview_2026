@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import lld.hotelbooking.domain.Booking;
+import lld.bookmyshow.domain.Booking;
 
 public class BmsCatalog {
     private final List<Movie> movies = new ArrayList<>();
