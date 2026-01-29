@@ -1,6 +1,7 @@
 package lld.bookmyshow.orchestrator;
 
 import lld.bookmyshow.domain.BmsCatalog;
+import lld.bookmyshow.domain.LockToken;
 import lld.bookmyshow.domain.SeatState;
 import lld.bookmyshow.domain.Show;
 import lld.bookmyshow.policy.SeatAllocationPolicy;
@@ -86,7 +87,37 @@ public class BookMyShowService {
     }
 
     public String lockSeats(String showId, String userId, List<String> seatIds, Instant now) {
-        throw new UnsupportedOperationException("TODO");
+
+        if (showId == null || showId.trim().isEmpty())
+            throw new IllegalArgumentException("showId required");
+        if (userId == null || userId.trim().isEmpty())
+            throw new IllegalArgumentException("userId required");
+        if (now == null)
+            throw new IllegalArgumentException("now required");
+
+        Show show = catalog.findShowById(showId);
+        if (show == null)
+            throw new IllegalArgumentException("Show not found: " + showId);
+
+        // Always cleanup first
+        seatLockPolicy.cleanupExpired(show, now);
+
+        // validate seats exist in this show
+        seatAllocationPolicy.validateSeatIds(show, seatIds);
+
+        // compute expiry via policy
+        Instant expiry = seatLockPolicy.lockExpiry(now);
+
+        // all-or-nothing lock
+        seatAllocationPolicy.allOrNothingLock(show, userId, seatIds, expiry, now);
+
+        // create token (copy list to avoid external mutation)
+        String tokenId = idGen.newId();
+        LockToken token = new LockToken(tokenId, showId, userId, new ArrayList<>(seatIds), expiry);
+
+        catalog.addLockToken(token);
+
+        return tokenId;
     }
 
     public String confirmBooking(String lockTokenId, String userId, Instant now) {

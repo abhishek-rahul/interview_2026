@@ -32,7 +32,23 @@ public class BmsCatalog {
     }
 
     public void removeLockToken(String tokenId) {
-        throw new UnsupportedOperationException("TODO");
+        LockToken toRemove = null;
+        for (LockToken t : lockTokens) {
+            if (t.getId().equals(tokenId)) {
+                toRemove = t;
+                break;
+            }
+        }
+        if (toRemove != null)
+            lockTokens.remove(toRemove);
+    }
+
+    public LockToken findLockTokenById(String tokenId) {
+        for (LockToken t : lockTokens) {
+            if (t.getId().equals(tokenId))
+                return t;
+        }
+        return null;
     }
 
     public Show findShowById(String showId) {

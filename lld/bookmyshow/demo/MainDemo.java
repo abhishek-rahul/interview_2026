@@ -1,4 +1,5 @@
 package lld.bookmyshow.demo;
+
 import lld.bookmyshow.domain.BmsCatalog;
 import lld.bookmyshow.domain.Movie;
 import lld.bookmyshow.domain.Seat;
@@ -57,9 +58,8 @@ public class MainDemo {
         BookMyShowService service = new BookMyShowService(
                 catalog,
                 new SimpleSeatAllocationPolicy(), // TODO methods later
-                new SimpleSeatLockPolicy(),       // TODO methods later
-                new SimpleIdGenerator()
-        );
+                new SimpleSeatLockPolicy(), // TODO methods later
+                new SimpleIdGenerator());
 
         // 3) Test listShows
         System.out.println("\n--- LIST SHOWS (Bangalore, Interstellar, 2026-02-10) ---\n");
@@ -68,19 +68,23 @@ public class MainDemo {
         if (out.isEmpty()) {
             System.out.println("No shows found");
         } else {
-            for (String line : out) System.out.println(line);
+            for (String line : out)
+                System.out.println(line);
         }
 
         System.out.println("\n--- LIST SHOWS (Goa, Interstellar, 2026-02-10) ---\n");
         List<String> out2 = service.listShows("Goa", "M1", LocalDate.of(2026, 2, 10));
-        for (String line : out2) System.out.println(line);
+        for (String line : out2)
+            System.out.println(line);
 
         System.out.println("\n--- LIST SHOWS (Bangalore, Interstellar, 2026-02-11) ---\n");
         List<String> out3 = service.listShows("Bangalore", "M1", LocalDate.of(2026, 2, 11));
-        if (out3.isEmpty()) System.out.println("No shows found");
+        if (out3.isEmpty())
+            System.out.println("No shows found");
 
         List<String> shows = service.listShows("Bangalore", "M1", LocalDate.of(2026, 2, 10));
-        for (String line : shows) System.out.println(line);
+        for (String line : shows)
+            System.out.println(line);
 
         // ✅ View seats for S1
         Instant now = Instant.parse("2026-02-01T10:00:00Z");
@@ -88,6 +92,26 @@ public class MainDemo {
         System.out.println("\n--- VIEW SEATS (Show S1) ---\n");
         System.out.println("seatId | status | owner | expiry | bookingId");
         List<String> seats = service.viewSeats("S1", now);
-        for (String line : seats) System.out.println(line);
+        for (String line : seats)
+            System.out.println(line);
+
+        System.out.println("\n--- LOCK SEATS (Show S1, user=u1, [A1,A2]) ---\n");
+        String tokenId = service.lockSeats("S1", "u1", List.of("A1", "A2"), now);
+        System.out.println("lockTokenId = " + tokenId);
+
+        System.out.println("\n--- VIEW SEATS (Show S1) AFTER LOCK ---\n");
+        System.out.println("seatId | status | owner | expiry | bookingId");
+        List<String> seatsAfterLock = service.viewSeats("S1", now);
+        for (String line : seatsAfterLock)
+            System.out.println(line);
+
+        // Failure demo: try locking A2 again by another user
+        System.out.println("\n--- LOCK SEATS FAIL DEMO (user=u2 tries [A2]) ---\n");
+        try {
+            service.lockSeats("S1", "u2", List.of("A2"), now);
+            System.out.println("Unexpected: should have failed");
+        } catch (Exception e) {
+            System.out.println("Expected failure: " + e.getMessage());
+        }
     }
 }
