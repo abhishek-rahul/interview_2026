@@ -29,4 +29,8 @@ public class Item {
     public void setPrice(int newPrice) {
         // no logic in Stage 6
     }
+
+    public String summaryLine() {
+        return code + " | " + name + " | price=" + price + " | stock=" + stock;
+    }
 }

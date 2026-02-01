@@ -1,11 +1,13 @@
 package lld.vendingmachine.orchestrator;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 
 import lld.vendingmachine.domain.enums.PurchaseStatus;
 import lld.vendingmachine.domain.VendingCatalog;
+import lld.vendingmachine.domain.Item;
 import lld.vendingmachine.domain.PurchaseResult;
 import lld.vendingmachine.policy.ChangeMakingPolicy;
 
@@ -24,7 +26,11 @@ public class VendingMachineService {
 
     // 7A
     public List<String> listItems() {
-        return Collections.emptyList();
+        List<String> out = new ArrayList<>();
+        for (Item it : catalog.allItems()) {
+            out.add(it.summaryLine());
+        }
+        return out;
     }
 
     // 7B
