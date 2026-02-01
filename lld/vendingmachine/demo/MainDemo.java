@@ -36,6 +36,12 @@ public class MainDemo {
         System.out.println("LIST: " + service.listItems());
         System.out.println("LIST: \n" + service.listItems());
         System.out.println("\n\n ---- End of List Items ---- \n\n ");
+
+
+        System.out.println("\n\n ---- View Item ---- \n\n ");
+        System.out.println("VIEW A1: " + service.viewItem("A1"));
+        //System.out.println("VIEW A1: " + service.viewItem("A5"));
+        System.out.println("\n\n ---- End of View Items ---- \n\n ");
         /* 
         System.out.println("VIEW A1: " + service.viewItem("A1"));
 

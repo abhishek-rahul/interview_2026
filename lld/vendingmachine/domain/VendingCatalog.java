@@ -19,7 +19,12 @@ public class VendingCatalog {
     }
 
     public Item findByCode(String code) {
-        return null;
+        for (Item it : items) {
+            if (it.code().equals(code)) {
+                return it;
+            }
+        }
+        throw new IllegalArgumentException("Invalid item code: " + code);
     }
 
     public MoneyInventory cash() {

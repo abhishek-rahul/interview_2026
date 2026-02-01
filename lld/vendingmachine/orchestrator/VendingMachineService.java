@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 import lld.vendingmachine.domain.enums.PurchaseStatus;
 import lld.vendingmachine.domain.VendingCatalog;
 import lld.vendingmachine.domain.Item;
@@ -35,7 +34,8 @@ public class VendingMachineService {
 
     // 7B
     public String viewItem(String code) {
-        return "";
+        Item it = catalog.findByCode(code);
+        return it.summaryLine();
     }
 
     public void selectItem(String code) {
