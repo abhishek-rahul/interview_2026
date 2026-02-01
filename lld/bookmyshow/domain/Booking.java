@@ -24,13 +24,40 @@ public class Booking {
         this.status = BookingStatus.CONFIRMED;
     }
 
-    public String getId() { return id; }
-    public String getShowId() { return showId; }
-    public String getUserId() { return userId; }
-    public List<String> getSeatIds() { return seatIds; }
-    public BookingStatus getStatus() { return status; }
-    public void setStatus(BookingStatus status) { this.status = status; }
-    public Instant getCreatedAt() { return createdAt; }
+    public String getId() {
+        return id;
+    }
+
+    public String getShowId() {
+        return showId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public List<String> getSeatIds() {
+        return seatIds;
+    }
+
+    public BookingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BookingStatus status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
 
     // NO logic yet: cancel() guard
+
+    public void cancel() {
+        if (status == BookingStatus.CANCELLED) {
+            throw new IllegalStateException("Already cancelled: " + id);
+        }
+        status = BookingStatus.CANCELLED;
+    }
 }

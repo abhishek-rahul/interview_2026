@@ -51,6 +51,14 @@ public class BmsCatalog {
         return null;
     }
 
+    public Booking findBookingById(String bookingId) {
+        for (Booking b : bookings) {
+            if (b.getId().equals(bookingId))
+                return b;
+        }
+        return null;
+    }
+
     public Show findShowById(String showId) {
         for (Show s : shows) {
             if (s.getId().equals(showId))

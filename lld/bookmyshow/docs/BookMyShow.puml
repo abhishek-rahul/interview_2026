@@ -1,0 +1,223 @@
+@startuml BookMyShow
+
+title BookMyShow - Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam defaultFontSize 10
+
+package "orchestrator" {
+  class BookMyShowService {
+    - catalog : BmsCatalog
+    - seatAllocationPolicy : SeatAllocationPolicy
+    - seatLockPolicy : SeatLockPolicy
+    - idGen : IdGenerator
+    __
+    + listShows(city, movieId, date) : List~String~
+    + viewSeats(showId, now) : List~String~
+    + lockSeats(showId, userId, seatIds, now) : String
+    + confirmBooking(lockTokenId, userId, now) : String
+    + cancelBooking(bookingId, userId, now) : boolean
+  }
+}
+
+package "domain" {
+  class BmsCatalog {
+    - movies : List~Movie~
+    - shows : List~Show~
+    - lockTokens : List~LockToken~
+    - bookings : List~Booking~
+    __
+    + addMovie(movie : Movie) : void
+    + addShow(show : Show) : void
+    + addLockToken(lockToken : LockToken) : void
+    + addBooking(booking : Booking) : void
+    + removeLockToken(tokenId : String) : void
+    + findLockTokenById(tokenId : String) : LockToken
+    + findBookingById(bookingId : String) : Booking
+    + findShowById(showId : String) : Show
+    + findShows(city, movieId, date) : List~Show~
+  }
+
+  class Movie {
+    - id : String
+    - title : String
+    - language : String
+    - durationMin : int
+    __
+    + getId() : String
+    + getTitle() : String
+    + getLanguage() : String
+    + getDurationMin() : int
+  }
+
+  class Show {
+    - id : String
+    - city : String
+    - theatreId : String
+    - screenId : String
+    - startTime : LocalDateTime
+    - movie : Movie
+    - seats : List~Seat~
+    - seatStateBySeatId : Map~String, SeatState~
+    __
+    + getId() : String
+    + getCity() : String
+    + getMovie() : Movie
+    + getSeats() : List~Seat~
+    + getSeatStateBySeatId() : Map
+    + addSeat(seat : Seat) : void
+    + getSeatState(seatId : String) : SeatState
+  }
+
+  class Seat {
+    - id : String
+    - row : String
+    - number : int
+    __
+    + getId() : String
+    + getRow() : String
+    + getNumber() : int
+  }
+
+  class SeatState {
+    - status : SeatStatus
+    - lockOwnerUserId : String
+    - lockExpiry : Instant
+    - bookingId : String
+    __
+    + getStatus() : SeatStatus
+    + setStatus(status : SeatStatus) : void
+    + getLockOwnerUserId() : String
+    + setLockOwnerUserId(userId : String) : void
+    + getLockExpiry() : Instant
+    + setLockExpiry(expiry : Instant) : void
+    + getBookingId() : String
+    + setBookingId(bookingId : String) : void
+  }
+
+  class Booking {
+    - id : String
+    - showId : String
+    - userId : String
+    - seatIds : List~String~
+    - status : BookingStatus
+    - createdAt : Instant
+    __
+    + getId() : String
+    + getShowId() : String
+    + getUserId() : String
+    + getSeatIds() : List~String~
+    + getStatus() : BookingStatus
+    + setStatus(status : BookingStatus) : void
+    + getCreatedAt() : Instant
+    + cancel() : void
+  }
+
+  class LockToken {
+    - id : String
+    - showId : String
+    - userId : String
+    - seatIds : List~String~
+    - expiry : Instant
+    __
+    + getId() : String
+    + getShowId() : String
+    + getUserId() : String
+    + getSeatIds() : List~String~
+    + getExpiry() : Instant
+  }
+
+  enum SeatStatus {
+    AVAILABLE
+    LOCKED
+    BOOKED
+  }
+
+  enum BookingStatus {
+    CONFIRMED
+    CANCELLED
+  }
+}
+
+package "policy" {
+  interface SeatAllocationPolicy {
+    + validateSeatIds(show : Show, seatIds : List~String~) : void
+    + allOrNothingLock(show : Show, userId : String, seatIds : List~String~, expiry : Instant, now : Instant) : void
+    + canConfirm(show : Show, userId : String, seatIds : List~String~, now : Instant) : boolean
+  }
+
+  interface SeatLockPolicy {
+    + lockExpiry(now : Instant) : Instant
+    + cleanupExpired(show : Show, now : Instant) : void
+    + isLockValid(state : SeatState, userId : String, now : Instant) : boolean
+  }
+
+  class SimpleSeatAllocationPolicy {
+    + validateSeatIds(show, seatIds)
+    + allOrNothingLock(show, userId, seatIds, expiry, now)
+    + canConfirm(show, userId, seatIds, now) : boolean
+  }
+
+  class SimpleSeatLockPolicy {
+    - {static} LOCK_TTL_MINUTES : long
+    + lockExpiry(now) : Instant
+    + cleanupExpired(show, now)
+    + isLockValid(state, userId, now) : boolean
+  }
+}
+
+package "util" {
+  interface IdGenerator {
+    + newId() : String
+  }
+
+  class SimpleIdGenerator {
+    - seq : AtomicLong
+    + newId() : String
+  }
+}
+
+package "demo" {
+  class MainDemo {
+    + {static} main(args : String[]) : void
+  }
+}
+
+' BookMyShowService dependencies
+BookMyShowService --> BmsCatalog : catalog
+BookMyShowService --> SeatAllocationPolicy : seatAllocationPolicy
+BookMyShowService --> SeatLockPolicy : seatLockPolicy
+BookMyShowService --> IdGenerator : idGen
+
+' Policy implementations
+SimpleSeatAllocationPolicy ..|> SeatAllocationPolicy
+SimpleSeatLockPolicy ..|> SeatLockPolicy
+SimpleIdGenerator ..|> IdGenerator
+
+' BmsCatalog composition
+BmsCatalog *-- Movie : movies
+BmsCatalog *-- Show : shows
+BmsCatalog *-- LockToken : lockTokens
+BmsCatalog *-- Booking : bookings
+
+' Show associations
+Show --> Movie : movie
+Show *-- Seat : seats
+Show *-- SeatState : seatStateBySeatId
+
+' Enums
+SeatState --> SeatStatus : status
+Booking --> BookingStatus : status
+
+' MainDemo uses (dependencies)
+MainDemo ..> BmsCatalog : creates
+MainDemo ..> Movie : creates
+MainDemo ..> Show : creates
+MainDemo ..> Seat : creates
+MainDemo ..> BookMyShowService : creates
+MainDemo ..> SimpleSeatAllocationPolicy : creates
+MainDemo ..> SimpleSeatLockPolicy : creates
+MainDemo ..> SimpleIdGenerator : creates
+
+@enduml

@@ -184,6 +184,42 @@ public class BookMyShowService {
     }
 
     public boolean cancelBooking(String bookingId, String userId, Instant now) {
-        throw new UnsupportedOperationException("TODO");
+
+        if (bookingId == null || bookingId.trim().isEmpty())
+            throw new IllegalArgumentException("bookingId required");
+        if (userId == null || userId.trim().isEmpty())
+            throw new IllegalArgumentException("userId required");
+        if (now == null)
+            throw new IllegalArgumentException("now required");
+
+        Booking booking = catalog.findBookingById(bookingId);
+        if (booking == null)
+            throw new IllegalArgumentException("Booking not found: " + bookingId);
+
+        if (!booking.getUserId().equals(userId)) {
+            throw new IllegalStateException("Booking does not belong to user: " + userId);
+        }
+
+        // entity guard
+        booking.cancel();
+
+        Show show = catalog.findShowById(booking.getShowId());
+        if (show == null)
+            throw new IllegalStateException("Show not found for booking: " + booking.getShowId());
+
+        // release seats: AVAILABLE, clear booking and lock fields
+        for (String seatId : booking.getSeatIds()) {
+            SeatState st = show.getSeatState(seatId);
+            if (st == null) {
+                throw new IllegalStateException("Seat state missing: " + seatId);
+            }
+
+            st.setStatus(SeatStatus.AVAILABLE);
+            st.setBookingId(null);
+            st.setLockOwnerUserId(null);
+            st.setLockExpiry(null);
+        }
+
+        return true;
     }
 }

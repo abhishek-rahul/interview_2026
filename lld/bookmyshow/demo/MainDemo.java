@@ -121,7 +121,26 @@ public class MainDemo {
         System.out.println("\n--- VIEW SEATS (Show S1) AFTER BOOKING ---\n");
         System.out.println("seatId | status | owner | expiry | bookingId");
         List<String> seatsAfterBooking = service.viewSeats("S1", now);
-        for (String line : seatsAfterBooking) System.out.println(line);
+        for (String line : seatsAfterBooking)
+            System.out.println(line);
 
+        System.out.println("\n--- CANCEL BOOKING (bookingId, user=u1) ---\n");
+        boolean ok = service.cancelBooking(bookingId, "u1", now);
+        System.out.println("cancelled = " + ok);
+
+        System.out.println("\n--- VIEW SEATS (Show S1) AFTER CANCEL ---\n");
+        System.out.println("seatId | status | owner | expiry | bookingId");
+        List<String> seatsAfterCancel = service.viewSeats("S1", now);
+        for (String line : seatsAfterCancel)
+            System.out.println(line);
+
+        // double cancel demo
+        System.out.println("\n--- DOUBLE CANCEL FAIL DEMO ---\n");
+        try {
+            service.cancelBooking(bookingId, "u1", now);
+            System.out.println("Unexpected: should have failed");
+        } catch (Exception e) {
+            System.out.println("Expected failure: " + e.getMessage());
+        }
     }
 }
