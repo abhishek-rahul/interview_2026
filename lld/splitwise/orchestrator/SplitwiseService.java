@@ -7,6 +7,7 @@ import lld.splitwise.domain.TransferSuggestion;
 import lld.splitwise.domain.User;
 import lld.splitwise.domain.Expense;
 import lld.splitwise.domain.Group;
+import lld.splitwise.policy.DebtSimplificationPolicy;
 import lld.splitwise.policy.DebtSimplificationPolicyFactory;
 import lld.splitwise.policy.SplitPolicy;
 import lld.splitwise.policy.SplitPolicyFactory;
@@ -83,7 +84,7 @@ public class SplitwiseService {
         return groupId;
     }
 
-    String addExpense(String groupId,
+    public String addExpense(String groupId,
             String payerId,
             long totalPaise,
             SplitType splitType,
@@ -148,11 +149,14 @@ public class SplitwiseService {
     }
 
     public List<TransferSuggestion> getSimplifiedDebts(String groupId) {
-        // TODO Stage 7B/7C:
-        // 1) snapshot = group.ledger.snapshot()
-        // 2) policy = debtPolicyFactory.get(group.simplifyMode)
-        // 3) return policy.simplify(snapshot)
-        return null;
+        Group g = catalog.findGroupById(groupId);
+        if (g == null) {
+            throw new IllegalArgumentException("group not found: " + groupId);
+        }
+
+        Map<String, Long> snapshot = g.ledger.snapshot(); // read-only copy
+        DebtSimplificationPolicy policy = debtPolicyFactory.get(g.getSimplifyMode());
+        return policy.simplify(snapshot);
     }
 
     public String settleUp(String groupId, String fromUserId, String toUserId, long amountPaise) {
