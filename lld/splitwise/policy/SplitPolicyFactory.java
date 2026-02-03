@@ -12,8 +12,21 @@ public class SplitPolicyFactory {
     private final SplitPolicy percent = new PercentSplitPolicy();
     private final SplitPolicy share = new ShareSplitPolicy();
 
-    SplitPolicy get(SplitType type) {
-        // TODO Stage 7C (return appropriate policy)
-        return null;
+    public SplitPolicy get(SplitType type) {
+        if (type == null)
+            throw new IllegalArgumentException("splitType cannot be null");
+
+        switch (type) {
+            case EQUAL:
+                return equal;
+            case EXACT:
+                return exact;
+            case PERCENT:
+                return percent;
+            case SHARE:
+                return share;
+            default:
+                throw new IllegalArgumentException("unsupported splitType: " + type);
+        }
     }
 }

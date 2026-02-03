@@ -6,10 +6,23 @@ import java.util.Map;
 public class Ledger {
     private final Map<String, Long> netBalance = new HashMap<>();
 
-    Ledger() {}
+    Ledger() {
+    }
 
-    void applyExpense(Expense e) {
-        // TODO Stage 7C
+    public void applyExpense(Expense e) {
+        if (e == null)
+            throw new IllegalArgumentException("expense null");
+
+        ensureMemberInitialized(e.payerId);
+
+        // payer paid total
+        netBalance.put(e.payerId, getNetPaise(e.payerId) + e.totalPaise);
+
+        // participants owe their shares
+        for (SplitLine line : e.lines) {
+            ensureMemberInitialized(line.userId);
+            netBalance.put(line.userId, getNetPaise(line.userId) - line.owedPaise);
+        }
     }
 
     void applySettlement(Settlement s) {
@@ -20,7 +33,7 @@ public class Ledger {
         return netBalance.getOrDefault(userId, 0L);
     }
 
-    Map<String, Long> snapshot() {
+    public Map<String, Long> snapshot() {
         return new HashMap<>(netBalance);
     }
 

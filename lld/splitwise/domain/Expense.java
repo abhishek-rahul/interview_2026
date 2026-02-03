@@ -11,7 +11,7 @@ public class Expense {
     final String note;
     final long createdAtEpochMs;
 
-    Expense(String id,
+    public Expense(String id,
             String groupId,
             String payerId,
             long totalPaise,

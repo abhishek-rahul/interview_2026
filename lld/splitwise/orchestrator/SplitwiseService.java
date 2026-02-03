@@ -1,11 +1,14 @@
 package lld.splitwise.orchestrator;
 
 import lld.splitwise.domain.SplitInput;
+import lld.splitwise.domain.SplitLine;
 import lld.splitwise.domain.SplitwiseCatalog;
 import lld.splitwise.domain.TransferSuggestion;
 import lld.splitwise.domain.User;
+import lld.splitwise.domain.Expense;
 import lld.splitwise.domain.Group;
 import lld.splitwise.policy.DebtSimplificationPolicyFactory;
+import lld.splitwise.policy.SplitPolicy;
 import lld.splitwise.policy.SplitPolicyFactory;
 import lld.splitwise.domain.enums.SplitType;
 import lld.splitwise.domain.enums.DebtSimplifyMode;
@@ -80,24 +83,68 @@ public class SplitwiseService {
         return groupId;
     }
 
-    public String addExpense(String groupId,
+    String addExpense(String groupId,
             String payerId,
             long totalPaise,
             SplitType splitType,
             List<SplitInput> inputs,
             String note) {
-        // TODO Stage 7D:
-        // 1) validate group + payer + participants
-        // 2) splitPolicy.validate(...)
-        // 3) lines = splitPolicy.compute(...)
-        // 4) create Expense
-        // 5) group.addExpense + group.ledger.applyExpense
-        return null;
+
+        // 1) group validation
+        Group g = catalog.findGroupById(groupId);
+        if (g == null)
+            throw new IllegalArgumentException("group not found: " + groupId);
+
+        // 2) payer validation
+        if (payerId == null || payerId.isBlank())
+            throw new IllegalArgumentException("payerId empty");
+        if (!g.hasMember(payerId))
+            throw new IllegalArgumentException("payer not in group: " + payerId);
+
+        // 3) participant validation: all must be members + no duplicates
+        if (inputs == null || inputs.isEmpty())
+            throw new IllegalArgumentException("participants empty");
+        Set<String> seen = new HashSet<>();
+        for (SplitInput in : inputs) {
+            if (in.userId == null || in.userId.isBlank())
+                throw new IllegalArgumentException("participant userId empty");
+            if (!g.hasMember(in.userId))
+                throw new IllegalArgumentException("participant not in group: " + in.userId);
+            if (!seen.add(in.userId))
+                throw new IllegalArgumentException("duplicate participant: " + in.userId);
+        }
+
+        // 4) split compute via policy
+        SplitPolicy policy = splitPolicyFactory.get(splitType);
+        policy.validate(totalPaise, payerId, inputs);
+        List<SplitLine> lines = policy.compute(totalPaise, payerId, inputs);
+
+        // 5) create expense entity
+        String expenseId = "E-" + UUID.randomUUID().toString();
+        Expense e = new Expense(
+                expenseId,
+                groupId,
+                payerId,
+                totalPaise,
+                lines,
+                (note == null ? "" : note),
+                System.currentTimeMillis());
+
+        // 6) store record + apply to ledger
+        g.addExpense(e);
+
+        return expenseId;
     }
 
     public Map<String, Long> getBalances(String groupId) {
-        // TODO Stage 7B
-        return null;
+        // 1) validate + fetch group
+        Group g = catalog.findGroupById(groupId);
+        if (g == null) {
+            throw new IllegalArgumentException("group not found: " + groupId);
+        }
+
+        // 2) return a defensive copy (read-only snapshot)
+        return g.ledger.snapshot();
     }
 
     public List<TransferSuggestion> getSimplifiedDebts(String groupId) {

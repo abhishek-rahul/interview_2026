@@ -27,7 +27,13 @@ public class SplitwiseCatalog {
     }
 
     public Group findGroupById(String groupId) {
-        // TODO Stage 7A
+        if (groupId == null || groupId.trim().isEmpty())
+            return null;
+
+        for (Group g : groups) {
+            if (g.id.equals(groupId))
+                return g;
+        }
         return null;
     }
 }

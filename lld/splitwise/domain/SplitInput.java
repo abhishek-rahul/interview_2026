@@ -1,8 +1,8 @@
 package lld.splitwise.domain;
 
 public class SplitInput {
-    final String userId;
-    final long value;
+    public final String userId;
+    public final long value;
 
     SplitInput(String userId, long value) {
         this.userId = userId;

@@ -13,7 +13,7 @@ public class Group {
     final List<Expense> expenses = new ArrayList<>();
     final List<Settlement> settlements = new ArrayList<>();
 
-    final Ledger ledger = new Ledger();
+    public final Ledger ledger = new Ledger();
 
     DebtSimplifyMode simplifyMode = DebtSimplifyMode.GREEDY_FAST;
 
@@ -26,7 +26,7 @@ public class Group {
         this.name = name;
     }
 
-    boolean hasMember(String userId) {
+    public boolean hasMember(String userId) {
         return memberUserIds.contains(userId);
     }
 
@@ -44,7 +44,10 @@ public class Group {
     }
 
     public void addExpense(Expense e) {
-        // TODO Stage 7D
+        if (e == null)
+            throw new IllegalArgumentException("expense cannot be null");
+        expenses.add(e);
+        ledger.applyExpense(e);
     }
 
     public void addSettlement(Settlement s) {
