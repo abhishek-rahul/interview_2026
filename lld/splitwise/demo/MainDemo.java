@@ -20,9 +20,6 @@ public class MainDemo {
         String u2 = service.createUser("Amit");
         String u3 = service.createUser("Neha");
 
-        String g1 = service.createGroup("Goa Trip", Arrays.asList(u1, u2, u3), DebtSimplifyMode.MIN_TRANSFERS);
-
-        // addExpense / getBalances / settleUp will be implemented in Stage 7.
-        System.out.println("Stage 6 shells compiled. Next: Stage 7A browse/list flows.");
+        System.out.println("Created users: " + u1 + ", " + u2 + ", " + u3);
     }
 }
