@@ -5,7 +5,6 @@ import lld.splitwise.domain.enums.DebtSimplifyMode;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Group {
     final String id;
     final String name;
@@ -18,7 +17,11 @@ public class Group {
 
     DebtSimplifyMode simplifyMode = DebtSimplifyMode.GREEDY_FAST;
 
-    Group(String id, String name) {
+    public DebtSimplifyMode getSimplifyMode() {
+        return simplifyMode;
+    }
+
+    public Group(String id, String name) {
         this.id = id;
         this.name = name;
     }
@@ -27,16 +30,28 @@ public class Group {
         return memberUserIds.contains(userId);
     }
 
-    void addMember(String userId) {
-        // TODO Stage 7A
+    public void addMember(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new IllegalArgumentException("userId cannot be empty");
+        }
+        if (memberUserIds.contains(userId)) {
+            throw new IllegalArgumentException("duplicate member: " + userId);
+        }
+        memberUserIds.add(userId);
+
+        // ensure ledger has an entry for this member (0 balance initially)
+        ledger.ensureMemberInitialized(userId);
     }
 
-    void addExpense(Expense e) {
+    public void addExpense(Expense e) {
         // TODO Stage 7D
     }
 
-    void addSettlement(Settlement s) {
+    public void addSettlement(Settlement s) {
         // TODO Stage 7E
     }
-}
 
+    public void setSimplifyMode(DebtSimplifyMode simplifyMode) {
+        this.simplifyMode = simplifyMode;
+    }
+}

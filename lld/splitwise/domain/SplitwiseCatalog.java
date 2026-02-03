@@ -7,15 +7,26 @@ public class SplitwiseCatalog {
     final List<User> users = new ArrayList<>();
     final List<Group> groups = new ArrayList<>();
 
-    public void addUser(User u) { users.add(u); }
-    public void addGroup(Group g) { groups.add(g); }
+    public void addUser(User u) {
+        users.add(u);
+    }
 
-    User findUserById(String userId) {
-        // TODO Stage 7A
+    public void addGroup(Group g) {
+        groups.add(g);
+    }
+
+    public User findUserById(String userId) {
+        if (userId == null || userId.trim().isEmpty())
+            return null;
+
+        for (User u : users) {
+            if (u.id.equals(userId))
+                return u;
+        }
         return null;
     }
 
-    Group findGroupById(String groupId) {
+    public Group findGroupById(String groupId) {
         // TODO Stage 7A
         return null;
     }

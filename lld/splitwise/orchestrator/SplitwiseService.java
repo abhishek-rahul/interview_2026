@@ -4,13 +4,16 @@ import lld.splitwise.domain.SplitInput;
 import lld.splitwise.domain.SplitwiseCatalog;
 import lld.splitwise.domain.TransferSuggestion;
 import lld.splitwise.domain.User;
+import lld.splitwise.domain.Group;
 import lld.splitwise.policy.DebtSimplificationPolicyFactory;
 import lld.splitwise.policy.SplitPolicyFactory;
 import lld.splitwise.domain.enums.SplitType;
 import lld.splitwise.domain.enums.DebtSimplifyMode;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class SplitwiseService {
@@ -38,8 +41,43 @@ public class SplitwiseService {
     }
 
     public String createGroup(String name, List<String> memberUserIds, DebtSimplifyMode mode) {
-        // TODO Stage 7A
-        return null;
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("group name cannot be empty");
+        }
+        if (memberUserIds == null || memberUserIds.isEmpty()) {
+            throw new IllegalArgumentException("group must have at least 1 member");
+        }
+
+        // 1) validate all members exist + no duplicates
+        Set<String> seen = new HashSet<>();
+        for (String uid : memberUserIds) {
+            if (uid == null || uid.trim().isEmpty()) {
+                throw new IllegalArgumentException("member userId cannot be empty");
+            }
+            if (!seen.add(uid)) {
+                throw new IllegalArgumentException("duplicate member in request: " + uid);
+            }
+            if (catalog.findUserById(uid) == null) {
+                throw new IllegalArgumentException("user not found: " + uid);
+            }
+        }
+
+        // 2) create group entity
+        String groupId = "G-" + UUID.randomUUID().toString();
+        Group g = new Group(groupId, name.trim());
+        DebtSimplifyMode sMode = g.getSimplifyMode();
+        sMode = (mode == null) ? DebtSimplifyMode.GREEDY_FAST : mode;
+        g.setSimplifyMode(sMode);
+
+        // 3) add members (entity enforces invariants + ledger init)
+        for (String uid : memberUserIds) {
+            g.addMember(uid);
+        }
+
+        // 4) store in catalog
+        catalog.addGroup(g);
+
+        return groupId;
     }
 
     public String addExpense(String groupId,
