@@ -37,22 +37,33 @@ public class MainDemo {
         System.out.println("LIST: \n" + service.listItems());
         System.out.println("\n\n ---- End of List Items ---- \n\n ");
 
-
         System.out.println("\n\n ---- View Item ---- \n\n ");
         System.out.println("VIEW A1: " + service.viewItem("A1"));
-        //System.out.println("VIEW A1: " + service.viewItem("A5"));
+        // System.out.println("VIEW A1: " + service.viewItem("A5"));
         System.out.println("\n\n ---- End of View Items ---- \n\n ");
-        /* 
-        System.out.println("VIEW A1: " + service.viewItem("A1"));
-
         service.selectItem("A1");
         service.insertMoney(10);
-        System.out.println("INSERTED: " + service.getInsertedAmount());
+        service.insertMoney(10);
+        System.out.println("INSERTED: " + service.getInsertedAmount()); // 20
 
-        PurchaseResult result = service.confirmPurchase();
-        System.out.println("CONFIRM: " + result);
+        System.out.println("CANCEL REFUND: " + service.cancel()); // [10, 10]
+        System.out.println("INSERTED AFTER CANCEL: " + service.getInsertedAmount()); // 0
 
-        System.out.println("CANCEL REFUND: " + service.cancel());
-        */
+        System.out.println("\n\n ---- Money Inventory ---- \n\n ");
+        cash.add(10, 2);
+        cash.add(5, 3);
+        cash.add(1, 10);
+
+        System.out.println("CHANGE PLAN for 17: " + changePolicy.planChange(17, cash).changeDenoms());
+        System.out.println("\n\n ---- End Money Inventory ---- \n\n ");
+
+        service.selectItem("A1"); // Chips 20
+        service.insertMoney(10);
+        service.insertMoney(10);
+
+        PurchaseResult r1 = service.confirmPurchase();
+        System.out.println("CONFIRM 1: " + r1);
+        System.out.println("VIEW A1 AFTER: " + service.viewItem("A1"));
+
     }
 }

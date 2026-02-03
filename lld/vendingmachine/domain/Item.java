@@ -13,21 +13,38 @@ public class Item {
         this.stock = stock;
     }
 
-    public String code() { return code; }
-    public String name() { return name; }
-    public int price() { return price; }
-    public int stock() { return stock; }
+    public String code() {
+        return code;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public int price() {
+        return price;
+    }
+
+    public int stock() {
+        return stock;
+    }
 
     public boolean isInStock() {
-        return false;
+        return stock > 0;
     }
 
     public void decrementStock() {
-        // no logic in Stage 6
+        if (stock <= 0) {
+            throw new IllegalStateException("Out of stock for item: " + code);
+        }
+        stock--;
     }
 
     public void setPrice(int newPrice) {
-        // no logic in Stage 6
+        if (newPrice <= 0) {
+            throw new IllegalArgumentException("Price must be > 0");
+        }
+        this.price = newPrice;
     }
 
     public String summaryLine() {

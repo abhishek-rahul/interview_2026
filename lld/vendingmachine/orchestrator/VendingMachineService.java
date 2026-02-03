@@ -9,7 +9,7 @@ import lld.vendingmachine.domain.VendingCatalog;
 import lld.vendingmachine.domain.Item;
 import lld.vendingmachine.domain.PurchaseResult;
 import lld.vendingmachine.policy.ChangeMakingPolicy;
-
+import lld.vendingmachine.policy.impl.ChangePlan;
 import lld.vendingmachine.domain.Transaction;
 
 public class VendingMachineService {
@@ -39,24 +39,87 @@ public class VendingMachineService {
     }
 
     public void selectItem(String code) {
-        // no logic in Stage 6
+        // validate item exists (read-only)
+        catalog.findByCode(code);
+
+        // set selection + reset txn money
+        txn.select(code);
     }
 
     public void insertMoney(int denomination) {
-        // no logic in Stage 6
+        if (denomination <= 0) {
+            throw new IllegalArgumentException("Invalid denomination: " + denomination);
+        }
+        txn.addMoney(denomination);
     }
 
     public int getInsertedAmount() {
-        return 0;
+        return txn.totalInserted();
     }
 
-    // 7E
     public List<Integer> cancel() {
-        return Collections.emptyList();
+        return txn.refundAllAndReset();
     }
 
     // 7C + 7D
     public PurchaseResult confirmPurchase() {
-        return new PurchaseResult(PurchaseStatus.NO_SELECTION, null, Collections.emptyList(), "NOT_IMPLEMENTED");
+        // -------- Phase 1: Validate (no mutation) --------
+        String code = txn.selectedCode();
+        if (code == null) {
+            return new PurchaseResult(PurchaseStatus.NO_SELECTION, null,
+                    Collections.emptyList(), "No item selected");
+        }
+
+        Item item;
+        try {
+            item = catalog.findByCode(code);
+        } catch (IllegalArgumentException e) {
+            // selection got stale somehow
+            return new PurchaseResult(PurchaseStatus.NO_SELECTION, null,
+                    Collections.emptyList(), "Invalid selection");
+        }
+
+        if (!item.isInStock()) {
+            return new PurchaseResult(PurchaseStatus.OUT_OF_STOCK, null,
+                    Collections.emptyList(), "Item out of stock: " + code);
+        }
+
+        int inserted = txn.totalInserted();
+        int price = item.price();
+
+        if (inserted < price) {
+            return new PurchaseResult(PurchaseStatus.INSUFFICIENT_FUNDS, null,
+                    Collections.emptyList(), "Need " + (price - inserted) + " more");
+        }
+
+        int requiredChange = inserted - price;
+
+        ChangePlan plan = changePolicy.planChange(requiredChange, catalog.cash());
+        if (!plan.possible()) {
+            return new PurchaseResult(PurchaseStatus.NO_CHANGE, null,
+                    Collections.emptyList(), "Cannot return exact change: " + requiredChange);
+        }
+
+        // -------- Phase 2: Commit (all mutations together) --------
+        // 1) decrement stock
+        item.decrementStock();
+
+        // 2) accept inserted money into machine cash
+        for (int denom : txn.insertedDenoms()) {
+            catalog.cash().add(denom, 1);
+        }
+
+        // 3) dispense change (remove from machine cash)
+        for (int denom : plan.changeDenoms()) {
+            catalog.cash().remove(denom, 1);
+        }
+
+        // 4) reset txn
+        txn.reset();
+
+        return new PurchaseResult(PurchaseStatus.SUCCESS, code,
+                new ArrayList<>(plan.changeDenoms()),
+                "Dispensed " + code + ", change=" + requiredChange);
     }
+
 }
