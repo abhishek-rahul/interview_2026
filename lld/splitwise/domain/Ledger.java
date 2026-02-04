@@ -1,0 +1,47 @@
+package lld.splitwise.domain;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Ledger {
+    private final Map<String, Long> netBalance = new HashMap<>();
+
+    Ledger() {
+    }
+
+    public void applyExpense(Expense e) {
+        if (e == null)
+            throw new IllegalArgumentException("expense null");
+
+        ensureMemberInitialized(e.payerId);
+
+        // payer paid total
+        netBalance.put(e.payerId, getNetPaise(e.payerId) + e.totalPaise);
+
+        // participants owe their shares
+        for (SplitLine line : e.lines) {
+            ensureMemberInitialized(line.userId);
+            netBalance.put(line.userId, getNetPaise(line.userId) - line.owedPaise);
+        }
+    }
+
+    void applySettlement(Settlement s) {
+        // TODO Stage 7E
+    }
+
+    long getNetPaise(String userId) {
+        return netBalance.getOrDefault(userId, 0L);
+    }
+
+    public Map<String, Long> snapshot() {
+        return new HashMap<>(netBalance);
+    }
+
+    void ensureMemberInitialized(String userId) {
+        netBalance.putIfAbsent(userId, 0L);
+    }
+
+    void assertInvariantZeroSum() {
+        // TODO Stage 7C
+    }
+}
