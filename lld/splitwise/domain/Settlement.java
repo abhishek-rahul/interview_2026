@@ -8,7 +8,7 @@ public class Settlement {
     final long amountPaise;
     final long createdAtEpochMs;
 
-    Settlement(String id,
+    public Settlement(String id,
                String groupId,
                String fromUserId,
                String toUserId,

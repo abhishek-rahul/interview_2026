@@ -37,7 +37,8 @@ public class MainDemo {
         }
     }
 
-    private static void printSimplified(String title, List<TransferSuggestion> suggestions, Map<String, String> userNames) {
+    private static void printSimplified(String title, List<TransferSuggestion> suggestions,
+            Map<String, String> userNames) {
         System.out.println("\n=== " + title + " ===");
         if (suggestions == null || suggestions.isEmpty()) {
             System.out.println("(no transfers needed)");
@@ -56,8 +57,7 @@ public class MainDemo {
         SplitwiseService service = new SplitwiseService(
                 catalog,
                 new SplitPolicyFactory(),
-                new DebtSimplificationPolicyFactory()
-        );
+                new DebtSimplificationPolicyFactory());
 
         // -----------------------
         // 1) Create Users
@@ -81,8 +81,7 @@ public class MainDemo {
         String goaTrip = service.createGroup(
                 "Goa Trip",
                 Arrays.asList(ravi, amit, neha, sumeet),
-                DebtSimplifyMode.GREEDY_FAST
-        );
+                DebtSimplifyMode.GREEDY_FAST);
         System.out.println("Group created: " + goaTrip);
 
         // -----------------------
@@ -100,17 +99,15 @@ public class MainDemo {
                         new SplitInput(ravi, 0),
                         new SplitInput(amit, 0),
                         new SplitInput(neha, 0),
-                        new SplitInput(sumeet, 0)
-                ),
-                "Cab"
-        );
+                        new SplitInput(sumeet, 0)),
+                "Cab");
         System.out.println("Expense added: " + e1 + " (Cab " + money(cab) + ")");
 
         printBalances("Balances after Cab (equal 4)", service.getBalances(goaTrip), userNames);
         printSimplified("Simplified debts after Cab", service.getSimplifiedDebts(goaTrip), userNames);
 
         // Expense #2: Dinner ₹2000, Amit paid, EXACT split
-        // Ravi: 800, Amit: 200, Neha: 500, Sumeet: 500  (sum=2000)
+        // Ravi: 800, Amit: 200, Neha: 500, Sumeet: 500 (sum=2000)
         long dinner = 2000L * 100;
         String e2 = service.addExpense(
                 goaTrip,
@@ -121,10 +118,8 @@ public class MainDemo {
                         new SplitInput(ravi, 800L * 100),
                         new SplitInput(amit, 200L * 100),
                         new SplitInput(neha, 500L * 100),
-                        new SplitInput(sumeet, 500L * 100)
-                ),
-                "Dinner (exact)"
-        );
+                        new SplitInput(sumeet, 500L * 100)),
+                "Dinner (exact)");
         System.out.println("Expense added: " + e2 + " (Dinner " + money(dinner) + ")");
 
         printBalances("Balances after Dinner (exact)", service.getBalances(goaTrip), userNames);
@@ -142,10 +137,8 @@ public class MainDemo {
                         new SplitInput(ravi, 40),
                         new SplitInput(amit, 20),
                         new SplitInput(neha, 10),
-                        new SplitInput(sumeet, 30)
-                ),
-                "Water Sports (percent)"
-        );
+                        new SplitInput(sumeet, 30)),
+                "Water Sports (percent)");
         System.out.println("Expense added: " + e3 + " (Sports " + money(sports) + ")");
 
         printBalances("Balances after Sports (percent)", service.getBalances(goaTrip), userNames);
@@ -154,6 +147,25 @@ public class MainDemo {
         // -----------------------
         // DONE till now
         // -----------------------
-        System.out.println("\n✅ Demo complete till: createUser, createGroup, addExpense, getBalances, getSimplifiedDebts");
+        System.out.println(
+                "\n✅ Demo complete till: createUser, createGroup, addExpense, getBalances, getSimplifiedDebts");
+
+        System.out.println("\n--- Settle Up Example ---");
+
+        printBalances("Balances BEFORE settlement", service.getBalances(goaTrip), userNames);
+        printSimplified("Simplified debts BEFORE settlement", service.getSimplifiedDebts(goaTrip), userNames);
+
+        List<TransferSuggestion> sug = service.getSimplifiedDebts(goaTrip);
+        if (!sug.isEmpty()) {
+            TransferSuggestion t0 = sug.get(0);
+            String sId = service.settleUp(goaTrip, t0.fromUserId, t0.toUserId, t0.amountPaise);
+            System.out.println("\nSettlement recorded: " + sId + " | " +
+                    userNames.getOrDefault(t0.fromUserId, t0.fromUserId) + " -> " +
+                    userNames.getOrDefault(t0.toUserId, t0.toUserId) + " : " + money(t0.amountPaise));
+        }
+
+        printBalances("Balances AFTER settlement", service.getBalances(goaTrip), userNames);
+        printSimplified("Simplified debts AFTER settlement", service.getSimplifiedDebts(goaTrip), userNames);
+
     }
 }
