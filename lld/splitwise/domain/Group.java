@@ -51,7 +51,9 @@ public class Group {
     }
 
     public void addSettlement(Settlement s) {
-        // TODO Stage 7E
+        if (s == null) throw new IllegalArgumentException("settlement cannot be null");
+        settlements.add(s);              // [STATE MUTATION] record stored
+        ledger.applySettlement(s);       // [STATE MUTATION] balance sheet update
     }
 
     public void setSimplifyMode(DebtSimplifyMode simplifyMode) {

@@ -7,6 +7,7 @@ import lld.splitwise.domain.TransferSuggestion;
 import lld.splitwise.domain.User;
 import lld.splitwise.domain.Expense;
 import lld.splitwise.domain.Group;
+import lld.splitwise.domain.Settlement;
 import lld.splitwise.policy.DebtSimplificationPolicy;
 import lld.splitwise.policy.DebtSimplificationPolicyFactory;
 import lld.splitwise.policy.SplitPolicy;
@@ -160,9 +161,56 @@ public class SplitwiseService {
     }
 
     public String settleUp(String groupId, String fromUserId, String toUserId, long amountPaise) {
-        // TODO Stage 7E:
-        // 1) validate + create Settlement
-        // 2) group.addSettlement + group.ledger.applySettlement
-        return null;
+        // 1) validate + fetch group
+        Group g = catalog.findGroupById(groupId);
+        if (g == null)
+            throw new IllegalArgumentException("group not found: " + groupId);
+
+        // 2) validate inputs
+        if (fromUserId == null || fromUserId.isBlank())
+            throw new IllegalArgumentException("fromUserId empty");
+        if (toUserId == null || toUserId.isBlank())
+            throw new IllegalArgumentException("toUserId empty");
+        if (fromUserId.equals(toUserId))
+            throw new IllegalArgumentException("from and to cannot be same");
+        if (amountPaise <= 0)
+            throw new IllegalArgumentException("amount must be > 0");
+
+        // 3) both must be members
+        if (!g.hasMember(fromUserId))
+            throw new IllegalArgumentException("fromUser not in group: " + fromUserId);
+        if (!g.hasMember(toUserId))
+            throw new IllegalArgumentException("toUser not in group: " + toUserId);
+
+        // 4) (optional correctness guard) from should owe and to should receive
+        long fromNet = g.ledger.getNetPaise(fromUserId);
+        long toNet = g.ledger.getNetPaise(toUserId);
+
+        if (fromNet >= 0) {
+            throw new IllegalArgumentException("fromUser does not owe money currently: net=" + fromNet);
+        }
+        if (toNet <= 0) {
+            throw new IllegalArgumentException("toUser is not a receiver currently: net=" + toNet);
+        }
+
+        long maxPay = Math.min(-fromNet, toNet);
+        if (amountPaise > maxPay) {
+            throw new IllegalArgumentException("amount too high. max allowed=" + maxPay);
+        }
+
+        // 5) create settlement entity
+        String settlementId = "S-" + UUID.randomUUID().toString();
+        Settlement s = new Settlement(
+                settlementId,
+                groupId,
+                fromUserId,
+                toUserId,
+                amountPaise,
+                System.currentTimeMillis());
+
+        // 6) apply (Option 2: group owns atomic update)
+        g.addSettlement(s);
+
+        return settlementId;
     }
 }

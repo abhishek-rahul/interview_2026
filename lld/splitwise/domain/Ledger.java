@@ -26,10 +26,22 @@ public class Ledger {
     }
 
     void applySettlement(Settlement s) {
-        // TODO Stage 7E
+        if (s == null)
+            throw new IllegalArgumentException("settlement null");
+
+        ensureMemberInitialized(s.fromUserId);
+        ensureMemberInitialized(s.toUserId);
+
+        // from paid amount -> from owes less (net increases)
+        netBalance.put(s.fromUserId, getNetPaise(s.fromUserId) + s.amountPaise);
+
+        // to received amount -> to should receive less (net decreases)
+        netBalance.put(s.toUserId, getNetPaise(s.toUserId) - s.amountPaise);
+
+        assertInvariantZeroSum();
     }
 
-    long getNetPaise(String userId) {
+    public long getNetPaise(String userId) {
         return netBalance.getOrDefault(userId, 0L);
     }
 
